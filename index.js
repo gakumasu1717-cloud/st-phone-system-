@@ -49,6 +49,7 @@ const EXTENSION_NAME = 'ST Phone System';
             await loadModule('apps/store-apps/weather.js');
             await loadModule('apps/store-apps/games.js');
             await loadModule('apps/store-apps/calendar.js');
+            await loadModule('apps/store-apps/theme.js');
 
 
 
@@ -64,6 +65,11 @@ const EXTENSION_NAME = 'ST Phone System';
                     utils: window.STPhone.Utils,
                     ui: window.STPhone.UI
                 });
+            }
+
+            // 6.5. 테마 앱 자동 초기화 (저장된 테마 불러오기)
+            if (window.STPhone.Apps && window.STPhone.Apps.Theme) {
+                window.STPhone.Apps.Theme.init();
             }
 
             // 7. 실리태번 옵션 메뉴에 폰 토글 버튼 추가
@@ -91,7 +97,7 @@ const EXTENSION_NAME = 'ST Phone System';
                     <span>📱 Phone</span>
                 </a>
             `;
-            
+
             // option_toggle_AN 뒤에 삽입
             const $anOption = $('#option_toggle_AN');
             if ($anOption.length > 0) {
@@ -105,7 +111,7 @@ const EXTENSION_NAME = 'ST Phone System';
             $('#option_toggle_phone').on('click', function() {
                 // 옵션 메뉴 닫기
                 $('#options').hide();
-                
+
                 // 폰 토글
                 if (window.STPhone && window.STPhone.UI) {
                     window.STPhone.UI.togglePhone();
@@ -197,9 +203,6 @@ const EXTENSION_NAME = 'ST Phone System';
             /^\s*\[📵/i,           // [🌟추가됨] 거절/부재중 로그 숨기기
             /^\s*\[⛔/i,           // [🌟추가됨] 차단됨 로그 숨기기
             /^\s*\[🚫/i,           // [NEW] 이거다. "읽씹(IGNORE)" 로그 숨기기 추가됨
-            /^\s*\[📲/i,           // 에어드롭 거절 로그 숨기기
-            /^\s*\[ts:/i,          // [NEW] 타임스탬프 로그 숨기기
-            /^\s*\[⏰/i,           // [NEW] 타임스탬프 로그 숨기기 (Time Skip)
         ];
 
 
@@ -223,10 +226,10 @@ const EXTENSION_NAME = 'ST Phone System';
                 return;
             }
         }
-        
+
         // 히든로그인지 확인
         const isHiddenLog = node.classList.contains('st-phone-hidden-log') || node.style.display === 'none';
-        
+
         // 타임스탬프 로직: 히든로그 -> 일반채팅 -> 히든로그 전환 감지
         if (isHiddenLog) {
             // 히든로그가 온 경우
@@ -283,23 +286,23 @@ const EXTENSION_NAME = 'ST Phone System';
         const checkInterval = setInterval(() => {
             const ctx = window.SillyTavern?.getContext?.();
             if (!ctx) return;
-            
+
             clearInterval(checkInterval);
-            
+
             const eventSource = ctx.eventSource;
             const eventTypes = ctx.eventTypes;
-            
+
             if (eventSource && eventTypes) {
                 // 프롬프트 생성 전 이벤트에 캘린더 프롬프트 주입
                 eventSource.on(eventTypes.CHAT_COMPLETION_PROMPT_READY, (data) => {
                     injectCalendarPrompt(data);
                 });
-                
+
                 // AI 응답 받은 후 날짜 추출
                 eventSource.on(eventTypes.MESSAGE_RECEIVED, (messageId) => {
                     setTimeout(() => processCalendarResponse(), 300);
                 });
-                
+
                 console.log(`📅 [${EXTENSION_NAME}] Calendar prompt injector initialized`);
             } else {
                 console.warn(`📅 [${EXTENSION_NAME}] Event system not available, using fallback`);
@@ -350,22 +353,22 @@ const EXTENSION_NAME = 'ST Phone System';
             if (!Store || !Store.isInstalled('calendar')) {
                 return;
             }
-            
+
             const Calendar = window.STPhone?.Apps?.Calendar;
             if (!Calendar) return;
-            
+
             const ctx = window.SillyTavern?.getContext?.();
             if (!ctx || !ctx.chat || ctx.chat.length === 0) return;
-            
+
             const lastMsg = ctx.chat[ctx.chat.length - 1];
             if (!lastMsg || lastMsg.is_user) return;
-            
+
             const msgText = lastMsg.mes || '';
             if (!msgText) return;
-            
+
             // 날짜 추출 및 처리
             const processed = Calendar.processAiResponse(msgText);
-            
+
             // 날짜가 추출되었으면 메시지에서 날짜 부분 숨기기
             if (processed !== msgText) {
                 // DOM에서 해당 메시지 찾아서 날짜 부분 숨기기
@@ -382,19 +385,19 @@ const EXTENSION_NAME = 'ST Phone System';
             // 마지막 AI 메시지에서 날짜 형식 숨기기
             const messages = document.querySelectorAll('.mes:not([is_user="true"]) .mes_text');
             if (!messages || messages.length === 0) return;
-            
+
             const lastMsgEl = messages[messages.length - 1];
             if (!lastMsgEl) return;
-            
+
             const html = lastMsgEl.innerHTML;
             if (!html) return;
-            
+
             // [2024년 3월 15일 금요일] 형식을 숨김 처리
             const dateRegex = /\[(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*(월요일|화요일|수요일|목요일|금요일|토요일|일요일)\]/g;
-            
+
             // 이미 숨김 처리된 경우 스킵
             if (lastMsgEl.querySelector('.st-calendar-date-hidden')) return;
-            
+
             if (dateRegex.test(html)) {
                 // 정규식 재설정 (test 후 lastIndex가 변경되므로)
                 const replaceRegex = /\[(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*(월요일|화요일|수요일|목요일|금요일|토요일|일요일)\]/g;
@@ -410,9 +413,9 @@ const EXTENSION_NAME = 'ST Phone System';
         const checkChat = setInterval(() => {
             const chatEl = document.querySelector('#chat');
             if (!chatEl) return;
-            
+
             clearInterval(checkChat);
-            
+
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
                     mutation.addedNodes.forEach((node) => {
@@ -425,7 +428,7 @@ const EXTENSION_NAME = 'ST Phone System';
                     });
                 });
             });
-            
+
             observer.observe(chatEl, { childList: true, subtree: true });
         }, 1000);
     }

@@ -132,6 +132,15 @@ window.STPhone.UI = (function() {
             unreadCount = window.STPhone.Apps.Messages.getTotalUnread();
         }
 
+        // 테마 앱에서 커스텀 아이콘 가져오기
+        let customIcons = {};
+        if (window.STPhone.Apps && window.STPhone.Apps.Theme && window.STPhone.Apps.Theme.getCurrentTheme) {
+            const theme = window.STPhone.Apps.Theme.getCurrentTheme();
+            if (theme && theme.icons) {
+                customIcons = theme.icons;
+            }
+        }
+
         let iconsHtml = '';
         allApps.forEach(app => {
             // 문자 앱에 배지 표시
@@ -140,10 +149,21 @@ window.STPhone.UI = (function() {
                 badgeHtml = `<div class="st-app-badge">${unreadCount > 99 ? '99+' : unreadCount}</div>`;
             }
 
+            // 커스텀 아이콘이 있으면 바로 적용
+            const customIcon = customIcons[app.id];
+            let bgStyle = `background: ${app.bg};`;
+            let iconContent = app.icon;
+
+            if (customIcon && customIcon.length > 0) {
+                // 투명 배경 아이콘 지원 - background를 transparent로 설정
+                bgStyle = `background-color: transparent; background-image: url(${customIcon}); background-size: cover; background-position: center;`;
+                iconContent = `<span style="opacity: 0;">${app.icon}</span>`; // SVG 숨기기
+            }
+
             iconsHtml += `
-                <div class="st-app-icon" data-app="${app.id}" ${app.isStoreApp ? 'data-store-app="true"' : ''} 
-                     style="background: ${app.bg}; color: white; padding-bottom: 10px; box-sizing: border-box; position: relative;">
-                    ${app.icon}
+                <div class="st-app-icon" data-app="${app.id}" ${app.isStoreApp ? 'data-store-app="true"' : ''}
+                     style="${bgStyle} color: white; padding-bottom: 10px; box-sizing: border-box; position: relative;">
+                    ${iconContent}
                     ${badgeHtml}
                 </div>
             `;
@@ -156,7 +176,7 @@ window.STPhone.UI = (function() {
         $('.st-app-icon').on('click', function() {
             const appId = $(this).data('app');
             const isStoreApp = $(this).data('store-app');
-            
+
             if (isStoreApp) {
                 openStoreApp(appId);
             } else {
@@ -169,13 +189,18 @@ window.STPhone.UI = (function() {
         $('.st-app-icon[data-store-app="true"]').on('mousedown touchstart', function(e) {
             const $icon = $(this);
             const appId = $icon.data('app');
-            
+
             pressTimer = setTimeout(() => {
                 showDeleteConfirm(appId, $icon);
             }, 800);
         }).on('mouseup mouseleave touchend', function() {
             clearTimeout(pressTimer);
         });
+
+        // 테마 앱이 있으면 배경 등 나머지 테마 즉시 적용 (아이콘은 이미 위에서 적용됨)
+        if (window.STPhone.Apps && window.STPhone.Apps.Theme && window.STPhone.Apps.Theme.applyTheme) {
+            window.STPhone.Apps.Theme.applyTheme();
+        }
     }
 
     function openApp(appId) {
@@ -234,6 +259,9 @@ window.STPhone.UI = (function() {
             case 'calendar':
                 Apps.Calendar?.open();
                 break;
+            case 'theme':
+                Apps.Theme?.open();
+                break;
             default:
                 toastr.warning('앱을 찾을 수 없습니다.');
         }
@@ -243,7 +271,7 @@ window.STPhone.UI = (function() {
     function showDeleteConfirm(appId, $icon) {
         const Apps = window.STPhone.Apps;
         const appInfo = Apps.Store?.getStoreAppInfo(appId);
-        
+
         if (!appInfo) return;
 
         // 삭제 확인 모달 표시
@@ -266,7 +294,7 @@ window.STPhone.UI = (function() {
                     text-align: center;
                     color: var(--pt-text-color, #000);
                 ">
-                    <div style="font-size: 36px; margin-bottom: 10px;">${appInfo.icon}</div>
+                    <div style="font-size: 48px; margin-bottom: 10px;">${appInfo.icon}</div>
                     <div style="font-size: 17px; font-weight: 600; margin-bottom: 5px;">"${appInfo.name}" 삭제</div>
                     <div style="font-size: 13px; color: var(--pt-sub-text, #86868b); margin-bottom: 20px;">
                         이 앱을 삭제하시겠습니까?
@@ -345,119 +373,6 @@ window.STPhone.UI = (function() {
         }
     }
 
-    // ========== 에어드롭 팝업 UI ==========
-    function showAirdropPopup(contact, imageUrl, description) {
-        $('#st-airdrop-popup').remove();
-
-        const contactAvatar = contact.avatar || '/img/ai4.png';
-        const contactName = contact.name || 'Unknown';
-
-        const popupHtml = `
-            <div id="st-airdrop-popup" class="st-airdrop-overlay">
-                <div class="st-airdrop-modal">
-                    <div class="st-airdrop-header">
-                        <div class="st-airdrop-icon">
-                            <i class="fa-brands fa-apple"></i>
-                        </div>
-                        <div class="st-airdrop-title">AirDrop</div>
-                        <div class="st-airdrop-subtitle">${contactName} would like to share a photo.</div>
-                    </div>
-                    <div class="st-airdrop-preview">
-                        <img src="${imageUrl}" alt="AirDrop Photo" class="st-airdrop-image">
-                    </div>
-                    <div class="st-airdrop-actions">
-                        <button class="st-airdrop-btn decline" id="st-airdrop-decline">Decline</button>
-                        <button class="st-airdrop-btn accept" id="st-airdrop-accept">Accept</button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const isPhoneActive = $phoneContainer && $phoneContainer.hasClass('active');
-        if (isPhoneActive) {
-            $phoneContainer.find('.st-phone-screen').append(popupHtml);
-        } else {
-            $('body').append(popupHtml);
-        }
-
-        setTimeout(() => {
-            $('#st-airdrop-popup').addClass('active');
-        }, 50);
-
-        $('#st-airdrop-decline').on('click', () => {
-            closeAirdropPopup();
-            toastr.info(`${contactName}의 에어드롭을 거절했습니다.`);
-            logAirdropDeclineToContext(contactName, description);
-        });
-
-        $('#st-airdrop-accept').on('click', () => {
-            closeAirdropPopup();
-            
-            if (window.STPhone.Apps?.Album) {
-                window.STPhone.Apps.Album.addPhoto({
-                    url: imageUrl,
-                    caption: `${contactName}에게 받은 사진`,
-                    date: new Date().toISOString()
-                });
-                toastr.success(`📸 ${contactName}의 사진이 앨범에 저장되었습니다!`);
-            } else {
-                toastr.success(`${contactName}의 에어드롭을 수락했습니다.`);
-            }
-        });
-
-        $('#st-airdrop-popup').on('click', function(e) {
-            if (e.target === this) {
-                closeAirdropPopup();
-            }
-        });
-
-        setTimeout(() => {
-            if ($('#st-airdrop-popup').length) {
-                closeAirdropPopup();
-                toastr.info(`${contactName}의 에어드롭이 만료되었습니다.`);
-            }
-        }, 30000);
-    }
-
-    function closeAirdropPopup() {
-        const $popup = $('#st-airdrop-popup');
-        $popup.removeClass('active');
-        setTimeout(() => {
-            $popup.remove();
-        }, 300);
-    }
-
-    function logAirdropDeclineToContext(senderName, photoDescription) {
-        try {
-            const settings = window.STPhone.Apps?.Settings?.getSettings?.() || {};
-            const userName = settings.userName || 'User';
-            const logText = `[📲 AirDrop Declined] ${userName} declined ${senderName}'s AirDrop photo request. (Photo: ${photoDescription || 'a photo'})`;
-
-            if (window.STPhone.Apps?.Messages?.addHiddenLog) {
-                window.STPhone.Apps.Messages.addHiddenLog('System', logText);
-                console.log('📱 [Airdrop] Decline logged via Messages.addHiddenLog');
-            } else {
-                console.warn('📱 [Airdrop] Messages.addHiddenLog not available, falling back');
-                const context = window.SillyTavern?.getContext?.();
-                if (context?.chat) {
-                    context.chat.push({
-                        name: 'System',
-                        is_user: false,
-                        is_system: false,
-                        send_date: Date.now(),
-                        mes: logText,
-                        extra: { is_phone_log: true, airdrop_declined: true }
-                    });
-                    if (window.SlashCommandParser?.commands['savechat']) {
-                        window.SlashCommandParser.commands['savechat'].callback({});
-                    }
-                }
-            }
-        } catch (e) {
-            console.error('[Airdrop] Failed to log decline:', e);
-        }
-    }
-
     return {
         init,
         togglePhone,
@@ -465,7 +380,6 @@ window.STPhone.UI = (function() {
         renderHomeScreen,
         openApp,
         openStoreApp,
-        setAppBadge,
-        showAirdropPopup
+        setAppBadge
     };
 })();
