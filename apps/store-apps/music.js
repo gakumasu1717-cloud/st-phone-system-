@@ -10,12 +10,12 @@ window.STPhone.Apps.Music = (function() {
                 position: absolute; top: 0; left: 0;
                 width: 100%; height: 100%; z-index: 999;
                 display: flex; flex-direction: column;
-                background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+                background: #1a1a2e;
                 color: #fff;
                 font-family: var(--pt-font, -apple-system, sans-serif);
             }
             .st-music-header {
-                padding: 20px 15px 10px;
+                padding: 20px 20px 15px;
                 text-align: center;
                 flex-shrink: 0;
             }
@@ -33,13 +33,13 @@ window.STPhone.Apps.Music = (function() {
                 padding: 20px;
             }
             .st-music-cover {
-                width: 250px; height: 250px;
+                width: 220px; height: 220px;
                 border-radius: 20px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: #9b59b6;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 80px;
+                font-size: 60px;
                 box-shadow: 0 20px 60px rgba(0,0,0,0.5);
                 margin-bottom: 30px;
             }
@@ -136,7 +136,7 @@ window.STPhone.Apps.Music = (function() {
             .st-playlist-icon {
                 width: 40px; height: 40px;
                 border-radius: 8px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: #9b59b6;
                 display: flex;
                 align-items: center;
                 justify-content: center;

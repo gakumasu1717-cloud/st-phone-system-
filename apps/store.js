@@ -17,7 +17,7 @@ window.STPhone.Apps.Store = (function() {
             }
 
             .st-store-header {
-                padding: 20px 15px 10px;
+                padding: 20px 20px 10px;
                 flex-shrink: 0;
             }
             .st-store-title {
@@ -32,13 +32,13 @@ window.STPhone.Apps.Store = (function() {
 
             .st-store-tabs {
                 display: flex;
-                padding: 0 15px;
+                padding: 0 20px;
                 gap: 20px;
                 border-bottom: 1px solid var(--pt-border, #e5e5e5);
                 flex-shrink: 0;
             }
             .st-store-tab {
-                padding: 12px 0;
+                padding: 14px 0;
                 font-size: 15px;
                 font-weight: 500;
                 cursor: pointer;
@@ -54,12 +54,12 @@ window.STPhone.Apps.Store = (function() {
             .st-store-content {
                 flex: 1;
                 overflow-y: auto;
-                padding: 15px;
+                padding: 20px;
             }
 
             /* 추천 배너 */
             .st-store-featured {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: var(--pt-accent, #007aff);
                 border-radius: 16px;
                 padding: 20px;
                 margin-bottom: 20px;
@@ -104,7 +104,7 @@ window.STPhone.Apps.Store = (function() {
             .st-app-card {
                 display: flex;
                 align-items: center;
-                padding: 12px;
+                padding: 14px;
                 background: var(--pt-card-bg, #fff);
                 border-radius: 14px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.04);
@@ -220,12 +220,12 @@ window.STPhone.Apps.Store = (function() {
                 margin-bottom: 20px;
             }
             .st-detail-icon {
-                width: 100px; height: 100px;
-                border-radius: 22px;
+                width: 80px; height: 80px;
+                border-radius: 20px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 48px;
+                font-size: 36px;
                 margin-right: 15px;
                 box-shadow: 0 4px 15px rgba(0,0,0,0.15);
             }
@@ -334,7 +334,7 @@ window.STPhone.Apps.Store = (function() {
         {
             id: 'notes',
             name: '메모',
-            bg: 'linear-gradient(135deg, #f1c40f, #f39c12)',
+            bg: '#f39c12',
             category: '생산성',
             description: '간단한 메모를 작성하고 저장할 수 있습니다. 아이디어를 빠르게 기록하세요.',
             version: '1.0.0',
@@ -344,7 +344,7 @@ window.STPhone.Apps.Store = (function() {
         {
             id: 'weather',
             name: '날씨',
-            bg: 'linear-gradient(135deg, #2980b9, #6dd5fa)',
+            bg: '#3498db',
             category: '날씨',
             description: '가상의 날씨 정보를 확인합니다. 롤플레이용 날씨 앱입니다.',
             version: '1.0.0',
@@ -354,18 +354,17 @@ window.STPhone.Apps.Store = (function() {
         {
             id: 'music',
             name: '음악',
-            bg: 'linear-gradient(135deg, #ff00cc, #333399)',
+            bg: '#9b59b6',
             category: '엔터테인먼트',
             description: '가상의 음악 플레이어입니다. 플레이리스트를 만들고 관리하세요.',
             version: '1.0.0',
             size: '1.2 MB',
             icon: `<svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>`
         },
-        // 수정후 코드
         {
             id: 'games',
             name: '게임',
-            bg: 'linear-gradient(135deg, #11998e, #38ef7d)',
+            bg: '#27ae60',
             category: '게임',
             description: '간단한 미니게임 모음입니다. 숫자 맞추기 게임을 즐겨보세요.',
             version: '1.0.0',
@@ -375,7 +374,7 @@ window.STPhone.Apps.Store = (function() {
         {
             id: 'calendar',
             name: '캘린더',
-            bg: 'linear-gradient(135deg, #ff6b6b, #ee5a5a)',
+            bg: '#e74c3c',
             category: '생산성',
             description: 'AI 응답에 날짜/요일을 자동으로 표시하고, 기념일을 관리합니다. RP 날짜 추적 기능!',
             version: '1.0.0',
@@ -385,12 +384,12 @@ window.STPhone.Apps.Store = (function() {
         {
             id: 'theme',
             name: '테마',
-            bg: 'linear-gradient(135deg, #a855f7, #6366f1)',
-            category: '꾸미기',
-            description: '폰의 색상, 배경, 말풍선 등을 원하는 대로 커스터마이징하세요. 프리셋 테마도 제공됩니다!',
+            bg: 'linear-gradient(135deg, #667eea, #764ba2)',
+            category: '커스터마이징',
+            description: '폰 전체 UI를 자유롭게 커스터마이징! 프레임, 배경, 말풍선 등을 꿈밀 수 있고 테마를 공유할 수도 있어요.',
             version: '1.0.0',
-            size: '0.6 MB',
-            icon: `<svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`
+            size: '0.8 MB',
+            icon: '🎨'
         }
     ];
 
@@ -472,6 +471,12 @@ window.STPhone.Apps.Store = (function() {
         if (index > -1) {
             installedApps.splice(index, 1);
             saveInstalledApps();
+            
+            // 테마 앱 삭제 시 테마 데이터도 삭제
+            if (appId === 'theme' && window.STPhone.Apps?.Theme?.clearTheme) {
+                window.STPhone.Apps.Theme.clearTheme();
+            }
+            
             return true;
         }
         return false;
@@ -723,7 +728,6 @@ window.STPhone.Apps.Store = (function() {
             case 'music':
                 Apps.Music?.open();
                 break;
-            // 수정후 코드
             case 'games':
                 Apps.Games?.open();
                 break;

@@ -18,7 +18,7 @@ window.STPhone.Apps.Calendar = (function() {
             
             /* 헤더 */
             .st-calendar-header {
-                padding: 15px;
+                padding: 20px 20px 15px;
                 flex-shrink: 0;
                 border-bottom: 1px solid var(--pt-border, #e5e5e5);
             }
@@ -39,7 +39,7 @@ window.STPhone.Apps.Calendar = (function() {
             
             /* 토글 섹션 */
             .st-calendar-toggle-section {
-                padding: 12px 15px;
+                padding: 14px 20px;
                 border-bottom: 1px solid var(--pt-border, #e5e5e5);
                 display: flex;
                 align-items: center;
@@ -69,7 +69,7 @@ window.STPhone.Apps.Calendar = (function() {
                 flex-shrink: 0;
             }
             .st-calendar-toggle.active {
-                background: #34c759;
+                background: var(--pt-accent, #007aff);
             }
             .st-calendar-toggle::after {
                 content: '';
@@ -92,7 +92,7 @@ window.STPhone.Apps.Calendar = (function() {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 12px 15px;
+                padding: 14px 20px;
                 background: var(--pt-card-bg, #fff);
             }
             .st-calendar-nav-btn {
@@ -231,7 +231,7 @@ window.STPhone.Apps.Calendar = (function() {
                 width: 44px;
                 height: 44px;
                 border-radius: 10px;
-                background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+                background: #e74c3c;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -435,14 +435,17 @@ window.STPhone.Apps.Calendar = (function() {
             isEnabled = true;
             rpDate = null;
         }
-        
-        // viewYear, viewMonth 초기화
-        if (rpDate) {
-            viewYear = rpDate.year;
-            viewMonth = rpDate.month;
-        } else {
-            viewYear = 2024;
-            viewMonth = 1;
+
+        // viewYear, viewMonth 초기화 - null인 경우에만 설정
+        if (viewYear === null || viewMonth === null) {
+            if (rpDate) {
+                viewYear = rpDate.year;
+                viewMonth = rpDate.month;
+            } else {
+                const today = new Date();
+                viewYear = today.getFullYear();
+                viewMonth = today.getMonth() + 1;
+            }
         }
     }
 

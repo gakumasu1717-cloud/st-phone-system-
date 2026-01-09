@@ -75,6 +75,9 @@ const EXTENSION_NAME = 'ST Phone System';
             // 7. 실리태번 옵션 메뉴에 폰 토글 버튼 추가
             addPhoneToggleButton();
 
+            // 8. 브랜치 기록 복사 핸들러 설정
+            setupBranchCopyHandler();
+
             console.log(`✅ [${EXTENSION_NAME}] All modules initialized! Press 'X' to toggle phone.`);
 
         } catch (error) {
@@ -203,6 +206,9 @@ const EXTENSION_NAME = 'ST Phone System';
             /^\s*\[📵/i,           // [🌟추가됨] 거절/부재중 로그 숨기기
             /^\s*\[⛔/i,           // [🌟추가됨] 차단됨 로그 숨기기
             /^\s*\[🚫/i,           // [NEW] 이거다. "읽씹(IGNORE)" 로그 숨기기 추가됨
+            /^\s*\[📲/i,           // 에어드롭 거절 로그 숨기기
+            /^\s*\[ts:/i,          // [NEW] 타임스탬프 로그 숨기기
+            /^\s*\[⏰/i,           // [NEW] 타임스탬프 로그 숨기기 (Time Skip)
         ];
 
 
@@ -281,7 +287,73 @@ const EXTENSION_NAME = 'ST Phone System';
         }
     };
 
-    // ========== 캘린더 프롬프트 주입 시스템 ==========
+    let lastKnownChatId = null;
+    let lastKnownCharacterId = null;
+
+    function setupBranchCopyHandler() {
+        const checkInterval = setInterval(() => {
+            const ctx = window.SillyTavern?.getContext?.();
+            if (!ctx?.eventSource || !ctx?.eventTypes) return;
+
+            clearInterval(checkInterval);
+
+            lastKnownChatId = ctx.chatId;
+            lastKnownCharacterId = ctx.characterId;
+
+            ctx.eventSource.on(ctx.eventTypes.CHAT_CHANGED, () => {
+                setTimeout(() => handleChatChanged(), 500);
+            });
+        }, 1000);
+    }
+
+    function handleChatChanged() {
+        const ctx = window.SillyTavern?.getContext?.();
+        if (!ctx) return;
+
+        const settings = window.STPhone.Apps?.Settings?.getSettings?.() || {};
+        if (!settings.branchCopyRecords) return;
+
+        const newChatId = ctx.chatId;
+        const newCharacterId = ctx.characterId;
+        const mainChat = ctx.chatMetadata?.main_chat;
+
+        if (!newChatId) {
+            lastKnownChatId = newChatId;
+            lastKnownCharacterId = newCharacterId;
+            return;
+        }
+
+        const isSameCharacter = lastKnownCharacterId === newCharacterId;
+        const isDifferentChat = lastKnownChatId !== newChatId;
+
+        if (isSameCharacter && isDifferentChat && mainChat) {
+            copyRecordsToNewChat(mainChat, newChatId);
+        }
+
+        lastKnownChatId = newChatId;
+        lastKnownCharacterId = newCharacterId;
+    }
+
+    function copyRecordsToNewChat(sourceChatId, targetChatId) {
+        const keySuffixes = ['messages', 'groups', 'translations', 'timestamps', 'custom_timestamps', 'calls'];
+        let copied = false;
+
+        keySuffixes.forEach(suffix => {
+            const sourceKey = `st_phone_${suffix}_${sourceChatId}`;
+            const targetKey = `st_phone_${suffix}_${targetChatId}`;
+
+            const sourceData = localStorage.getItem(sourceKey);
+            if (sourceData && !localStorage.getItem(targetKey)) {
+                localStorage.setItem(targetKey, sourceData);
+                copied = true;
+            }
+        });
+
+        if (copied) {
+            toastr.info('브랜치에 문자/전화 기록이 복사되었습니다');
+        }
+    }
+
     function setupCalendarPromptInjector() {
         const checkInterval = setInterval(() => {
             const ctx = window.SillyTavern?.getContext?.();
@@ -293,20 +365,14 @@ const EXTENSION_NAME = 'ST Phone System';
             const eventTypes = ctx.eventTypes;
 
             if (eventSource && eventTypes) {
-                // 프롬프트 생성 전 이벤트에 캘린더 프롬프트 주입
                 eventSource.on(eventTypes.CHAT_COMPLETION_PROMPT_READY, (data) => {
                     injectCalendarPrompt(data);
                 });
 
-                // AI 응답 받은 후 날짜 추출
                 eventSource.on(eventTypes.MESSAGE_RECEIVED, (messageId) => {
                     setTimeout(() => processCalendarResponse(), 300);
                 });
-
-                console.log(`📅 [${EXTENSION_NAME}] Calendar prompt injector initialized`);
             } else {
-                console.warn(`📅 [${EXTENSION_NAME}] Event system not available, using fallback`);
-                // 폴백: MutationObserver로 응답 감시
                 setupCalendarResponseObserver();
             }
         }, 1000);

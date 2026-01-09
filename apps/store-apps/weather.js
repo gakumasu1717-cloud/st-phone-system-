@@ -10,7 +10,7 @@ window.STPhone.Apps.Weather = (function() {
                 position: absolute; top: 0; left: 0;
                 width: 100%; height: 100%; z-index: 999;
                 display: flex; flex-direction: column;
-                background: linear-gradient(180deg, #4a90d9 0%, #87ceeb 100%);
+                background: #4a90d9;
                 color: #fff;
                 font-family: var(--pt-font, -apple-system, sans-serif);
             }
@@ -33,7 +33,7 @@ window.STPhone.Apps.Weather = (function() {
                 margin-bottom: 20px;
             }
             .st-weather-icon {
-                font-size: 100px;
+                font-size: 72px;
                 margin-bottom: 10px;
             }
             .st-weather-temp {

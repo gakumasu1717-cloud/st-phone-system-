@@ -206,14 +206,23 @@
 }
 /* 모든 입력창에서 테두리 강제 제거 및 색상 통일 */
 .st-section input,
-.st-section select,
-.st-section textarea {
+.st-section select {
     background-color: transparent !important;
     color: var(--pt-text-color) !important;
-    /* ⭐ 테두리 색을 다크모드/라이트모드에 맞춰서 회색으로 바꿈 */
     border: 1px solid var(--pt-border) !important;
-    border-radius: 6px; /* 모서리 살짝 둥글게 */
+    border-radius: 6px;
     outline: none !important;
+}
+.st-section textarea {
+    background-color: var(--pt-card-bg, #f5f5f7) !important;
+    color: var(--pt-text-color) !important;
+    border: 1px solid var(--pt-border) !important;
+    border-radius: 12px;
+    outline: none !important;
+    padding: 14px 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
 }
 
 
@@ -223,19 +232,18 @@
     background-color: var(--pt-bg-color);
     color: var(--pt-text-color);
 }
-/* 긴 텍스트 입력창 스타일 - 테두리 부활 & 색상 최적화 */
+/* 긴 텍스트 입력창 스타일 */
 .st-textarea {
     width: 100%;
-    /* 배경은 투명하게 해서 뒤에 색을 따라감 */
-    background-color: transparent !important;
-    /* 글자색은 테마 따라감 */
+    background-color: var(--pt-card-bg, #f5f5f7) !important;
     color: var(--pt-text-color) !important;
-    /* ⭐ 테두리 추가: 너무 하얗지 않게, 테두리 전용 변수 사용 */
     border: 1px solid var(--pt-border) !important;
-    border-radius: 8px;
-    padding: 10px;
+    border-radius: 12px;
+    padding: 14px 16px;
     font-family: inherit;
-    resize: none;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
     box-sizing: border-box;
     margin-top: 10px;
     outline: none;
@@ -374,21 +382,55 @@
 /* === 앱 아이콘 알림 배지 === */
 .st-app-badge {
     position: absolute;
-    top: -5px;
-    right: -5px;
+    top: -4px;
+    right: -4px;
     background: #ff3b30;
     color: white;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
-    min-width: 18px;
-    height: 18px;
-    border-radius: 9px;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 5px;
+    padding: 0 4px;
     box-sizing: border-box;
+    border: 2px solid var(--pt-bg-color, #f5f5f7);
 }
+
+/* === 공통 뱃지 스타일 === */
+.st-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+.st-badge-primary {
+    background: #1d1d1f;
+    color: white;
+}
+.st-badge-secondary {
+    background: var(--pt-border, #e5e5e5);
+    color: var(--pt-sub-text, #86868b);
+}
+.st-badge-destructive {
+    background: #ff3b30;
+    color: white;
+}
+.st-badge-outline {
+    background: transparent;
+    color: var(--pt-text-color, #1d1d1f);
+}
+.st-badge-accent {
+    background: var(--pt-accent, #007aff);
+    color: white;
+}
+
 /* 숨겨진 폰 로그는 채팅창에서 보이지 않게 처리 (중요) */
 .mes[is_phone_log="true"], .st-phone-hidden-log { display: none !important; }
 
@@ -673,7 +715,7 @@
         max-height: calc(100dvh - 100px) !important;
         overflow-y: auto !important;
     }
-
+    
     /* 앱 내부 화면들도 하단 여백 확보 */
     .st-settings-app,
     .st-messages-app,
@@ -687,137 +729,157 @@
         max-height: 100dvh !important;
         overflow-y: auto !important;
     }
-
+    
     /* 홈 그리드도 하단 여백 */
     .st-home-grid {
         padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
     }
 }
 
-/* =========================================
-   🎨 테마 앱 추가 CSS
-   style.css 맨 아래에 붙여넣으세요
-   ========================================= */
-
-/* === 테마 변수 기본값 (메시지 앱용) === */
-#st-phone-container {
-    --msg-my-bubble: #007aff;
-    --msg-my-text: #ffffff;
-    --msg-their-bubble: #e5e5ea;
-    --msg-their-text: #000000;
-    --msg-bubble-width: 75%;
-    --msg-bubble-radius: 18px;
-    --msg-font-size: 15px;
-    --msg-timestamp: #8e8e93;
-    --msg-bg-color: transparent;
-    --msg-bg-image: none;
+/* =========================================================
+   에어드롭
+   ========================================================= */
+.st-airdrop-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-/* === 메시지 앱에 테마 변수 적용 === */
-/* 채팅방 배경 */
-.st-messages-chat {
-    background-color: var(--msg-bg-color) !important;
-    background-image: var(--msg-bg-image) !important;
-    background-size: cover !important;
-    background-position: center !important;
+.st-airdrop-overlay.active {
+    opacity: 1;
 }
 
-/* 내 말풍선 */
-.st-msg-bubble.me {
-    background-color: var(--msg-my-bubble) !important;
-    color: var(--msg-my-text) !important;
-    max-width: var(--msg-bubble-width) !important;
-    border-radius: var(--msg-bubble-radius) !important;
-    font-size: var(--msg-font-size) !important;
-}
-
-/* 상대방 말풍선 */
-.st-msg-bubble.them {
-    background-color: var(--msg-their-bubble) !important;
-    color: var(--msg-their-text) !important;
-    max-width: var(--msg-bubble-width) !important;
-    border-radius: var(--msg-bubble-radius) !important;
-    font-size: var(--msg-font-size) !important;
-}
-
-/* 타임스탬프 */
-.st-msg-time {
-    color: var(--msg-timestamp) !important;
-}
-
-/* === 테마 앱 UI 스타일 === */
-.st-theme-app,
-.st-theme-edit {
-    font-family: var(--pt-font);
-}
-
-/* 프리셋 아이템 호버 */
-.theme-preset-item:hover {
-    opacity: 0.8;
-    transform: scale(1.05);
-    transition: all 0.2s ease;
-}
-
-/* 레인지 슬라이더 스타일링 */
-.theme-input[type="range"] {
-    -webkit-appearance: none;
-    appearance: none;
-    height: 6px;
-    border-radius: 3px;
-    background: var(--pt-border);
-}
-
-.theme-input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--pt-accent);
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-
-.theme-input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--pt-accent);
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-
-/* 컬러 피커 스타일 */
-input[type="color"].theme-input {
-    -webkit-appearance: none;
-    appearance: none;
-    border-radius: 8px;
+.st-airdrop-modal {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    width: 300px;
+    max-width: 90vw;
     overflow: hidden;
-    cursor: pointer;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-input[type="color"].theme-input::-webkit-color-swatch-wrapper {
+.st-airdrop-overlay.active .st-airdrop-modal {
+    transform: scale(1);
+}
+
+.st-airdrop-header {
+    padding: 20px 20px 15px;
+    text-align: center !important;
+}
+
+.st-airdrop-icon {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 10px;
+    background: linear-gradient(135deg, #007AFF, #5AC8FA);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+}
+
+.st-airdrop-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 5px;
+    text-align: center !important;
+}
+
+.st-airdrop-subtitle {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+    text-align: center !important;
+}
+
+.st-airdrop-preview {
     padding: 0;
 }
 
-input[type="color"].theme-input::-webkit-color-swatch {
+.st-airdrop-image {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 0;
+}
+
+.st-airdrop-actions {
+    display: flex;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.st-airdrop-btn {
+    flex: 1;
+    padding: 16px;
     border: none;
-    border-radius: 6px;
+    background: transparent;
+    font-size: 17px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: center !important;
 }
 
-/* 테마 앱 버튼 스타일 */
-.theme-image-btn:hover,
-.theme-image-clear:hover {
-    opacity: 0.9;
-    transform: scale(1.02);
-    transition: all 0.15s ease;
+.st-airdrop-btn:first-child {
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-/* 모바일에서 테마 앱 하단 여백 */
-@media screen and (max-width: 768px) {
-    .st-theme-app,
-    .st-theme-edit {
-        padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important;
-    }
+.st-airdrop-btn.decline {
+    color: #FF3B30;
+    text-align: center !important;
+}
+
+.st-airdrop-btn.accept {
+    color: #007AFF;
+    font-weight: 600;
+    text-align: center !important;
+}
+
+.st-airdrop-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.st-airdrop-btn:active {
+    background: rgba(0, 0, 0, 0.1);
+}
+/* 폰 화면 내부 에어드롭 팝업 */
+.st-phone-screen .st-airdrop-overlay {
+    position: absolute;
+    border-radius: 40px;
+}
+
+.st-phone-screen .st-airdrop-modal {
+    width: 280px;
+    max-width: 95%;
+}
+
+/* ========== [NEW] 콘텍스트 미반영 알약 태그 ========== */
+.st-msg-no-context {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-left: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(255, 149, 0, 0.15);
+    color: #ff9500;
+    border-radius: 10px;
+    vertical-align: middle;
+    white-space: nowrap;
 }

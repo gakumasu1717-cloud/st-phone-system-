@@ -198,6 +198,13 @@ window.STPhone.Apps.Theme = (function() {
     }
 
     async function init() {
+        // 테마 앱이 설치되어 있을 때만 테마 로드 및 적용
+        const globalApps = JSON.parse(localStorage.getItem('st_phone_global_installed_apps') || '[]');
+        if (!globalApps.includes('theme')) {
+            console.log('🎨 [Theme] Theme app not installed, skipping');
+            return;
+        }
+        
         await loadTheme();
         applyTheme();
         console.log('🎨 [ST Phone] Theme App Initialized');
@@ -1051,11 +1058,50 @@ window.STPhone.Apps.Theme = (function() {
         return currentTheme;
     }
 
+    // 테마 완전 삭제 (앱 삭제 시 호출)
+    async function clearTheme() {
+        // IndexedDB에서 삭제
+        try {
+            const db = await openDB();
+            const tx = db.transaction('themes', 'readwrite');
+            const store = tx.objectStore('themes');
+            store.delete('current');
+        } catch (e) {
+            console.log('IndexedDB clear failed:', e);
+        }
+        
+        // localStorage에서도 삭제
+        localStorage.removeItem(STORAGE_KEY);
+        
+        // 현재 테마 초기화
+        currentTheme = null;
+        
+        // CSS 변수 모두 제거하여 기본값으로
+        const $container = $('#st-phone-container');
+        if ($container.length) {
+            const root = $container[0];
+            const props = [
+                '--frame-color', '--frame-border', '--frame-thickness', '--frame-radius', '--frame-shadow',
+                '--pt-bg-color', '--pt-text-color', '--pt-sub-text', '--pt-card-bg', '--pt-border', '--pt-accent', '--pt-font',
+                '--msg-my-bubble', '--msg-my-text', '--msg-their-bubble', '--msg-their-text',
+                '--msg-bubble-width', '--msg-bubble-radius', '--msg-font-size', '--msg-timestamp', '--msg-bg-image', '--msg-bg-color'
+            ];
+            props.forEach(p => root.style.removeProperty(p));
+            
+            // 인라인 스타일도 제거
+            $('.st-phone-frame').css({ 'background': '', 'border': '', 'border-radius': '', 'box-shadow': '' });
+            $('.st-phone-screen').css({ 'background': '', 'background-image': '', 'background-size': '', 'background-position': '' });
+        }
+        
+        console.log('🗑️ Theme cleared completely');
+    }
+
     return {
         init,
         open,
         applyTheme,
         getStoreInfo,
-        getCurrentTheme
+        getCurrentTheme,
+        clearTheme
     };
 })();

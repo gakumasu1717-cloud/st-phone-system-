@@ -18,7 +18,7 @@ window.STPhone.Apps.Notes = (function() {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 20px 15px 10px;
+                padding: 20px 20px 15px;
                 flex-shrink: 0;
             }
             .st-notes-title {
@@ -29,9 +29,9 @@ window.STPhone.Apps.Notes = (function() {
                 background: var(--pt-accent, #007aff);
                 color: white;
                 border: none;
-                width: 36px; height: 36px;
+                width: 32px; height: 32px;
                 border-radius: 50%;
-                font-size: 24px;
+                font-size: 18px;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
@@ -40,7 +40,7 @@ window.STPhone.Apps.Notes = (function() {
             .st-notes-list {
                 flex: 1;
                 overflow-y: auto;
-                padding: 10px 15px 80px;
+                padding: 10px 20px 80px;
             }
             .st-note-item {
                 background: var(--pt-card-bg, #fff);
@@ -72,7 +72,7 @@ window.STPhone.Apps.Notes = (function() {
             }
             .st-notes-empty {
                 text-align: center;
-                padding: 60px 20px;
+                padding: 80px 24px;
                 color: var(--pt-sub-text, #86868b);
             }
             
@@ -118,13 +118,15 @@ window.STPhone.Apps.Notes = (function() {
             }
             .st-note-edit-body {
                 flex: 1;
-                border: none;
-                background: transparent;
-                font-size: 16px;
+                border: 1px solid var(--pt-border, #e5e5e5);
+                background: var(--pt-card-bg, #f5f5f7);
+                font-size: 14px;
                 color: var(--pt-text-color, #000);
                 resize: none;
                 outline: none;
                 line-height: 1.6;
+                border-radius: 12px;
+                padding: 14px 16px;
             }
         </style>
     `;
@@ -162,7 +164,7 @@ window.STPhone.Apps.Notes = (function() {
         if (notes.length === 0) {
             listHtml = `
                 <div class="st-notes-empty">
-                    <div style="font-size:48px;opacity:0.5;margin-bottom:15px;">📝</div>
+                    <div style="font-size:36px;opacity:0.5;margin-bottom:15px;"><i class="fa-regular fa-note-sticky"></i></div>
                     <div>메모가 없습니다</div>
                     <div style="font-size:13px;margin-top:5px;">+ 버튼을 눌러 새 메모를 작성하세요</div>
                 </div>

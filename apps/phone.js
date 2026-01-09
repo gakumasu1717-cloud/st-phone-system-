@@ -89,18 +89,18 @@ window.STPhone.Apps.Phone = (function() {
                 font-family: var(--pt-font, -apple-system, sans-serif);
             }
             .st-phone-header {
-                padding: 20px 15px 10px;
+                padding: 20px 20px 15px;
                 font-size: 28px;
                 font-weight: 700;
             }
             .st-phone-tabs {
                 display: flex;
                 border-bottom: 1px solid var(--pt-border, #e5e5e5);
-                padding: 0 15px;
+                padding: 0 20px;
             }
             .st-phone-tab {
                 flex: 1;
-                padding: 12px;
+                padding: 14px;
                 text-align: center;
                 font-size: 14px;
                 cursor: pointer;
@@ -115,12 +115,12 @@ window.STPhone.Apps.Phone = (function() {
             .st-phone-content {
                 flex: 1;
                 overflow-y: auto;
-                padding: 10px 15px;
+                padding: 10px 20px;
             }
             .st-call-item {
                 display: flex;
                 align-items: center;
-                padding: 12px 0;
+                padding: 14px 0;
                 border-bottom: 1px solid var(--pt-border, #e5e5e5);
             }
             .st-call-avatar {
@@ -163,13 +163,13 @@ window.STPhone.Apps.Phone = (function() {
             }
             .st-phone-empty {
                 text-align: center;
-                padding: 60px 20px;
+                padding: 80px 24px;
                 color: var(--pt-sub-text, #86868b);
             }
             .st-contact-call-item {
                 display: flex;
                 align-items: center;
-                padding: 12px 0;
+                padding: 14px 0;
                 border-bottom: 1px solid var(--pt-border, #e5e5e5);
                 cursor: pointer;
             }
@@ -178,7 +178,7 @@ window.STPhone.Apps.Phone = (function() {
             .st-calling-screen {
                 position: absolute; top: 0; left: 0;
                 width: 100%; height: 100%;
-                background: linear-gradient(180deg, #1c1c1e 0%, #2c2c2e 100%);
+                background: #1c1c1e;
                 display: flex; flex-direction: column;
                 align-items: center;
                 padding: 50px 20px 40px;
@@ -312,7 +312,7 @@ window.STPhone.Apps.Phone = (function() {
             .st-incoming-screen {
                 position: absolute; top: 0; left: 0;
                 width: 100%; height: 100%;
-                background: linear-gradient(180deg, #2c2c2e 0%, #1c1c1e 100%);
+                background: #1c1c1e;
                 display: flex; flex-direction: column;
                 align-items: center;
                 justify-content: center;
@@ -361,10 +361,15 @@ window.STPhone.Apps.Phone = (function() {
     let sentenceTimeout = null;
 
     function getStorageKey() {
-
-
         const context = window.SillyTavern?.getContext?.();
         if (!context?.chatId) return null;
+
+        // [NEW] 누적 모드일 때는 캐릭터 기반 키 사용
+        const settings = window.STPhone.Apps?.Settings?.getSettings?.() || {};
+        if (settings.recordMode === 'accumulate' && context.characterId !== undefined) {
+            return 'st_phone_calls_char_' + context.characterId;
+        }
+
         return 'st_phone_calls_' + context.chatId;
     }
 
@@ -429,7 +434,7 @@ window.STPhone.Apps.Phone = (function() {
 
         let historyHtml = '';
         if (callHistory.length === 0) {
-            historyHtml = `<div class="st-phone-empty"><div style="font-size:48px;opacity:0.5;margin-bottom:15px;">📞</div><div>통화 기록이 없습니다</div></div>`;
+            historyHtml = `<div class="st-phone-empty"><div style="font-size:36px;opacity:0.5;margin-bottom:15px;"><i class="fa-solid fa-phone"></i></div><div>통화 기록이 없습니다</div></div>`;
         } else {
 /* 수정된 반복문 코드 (복사해서 덮어씌우세요) */
             callHistory.forEach((h, index) => {
@@ -437,24 +442,24 @@ window.STPhone.Apps.Phone = (function() {
                 let typeIcon, typeLabel, typeColor;
 
                 if (h.type === 'missed') {
-                    typeIcon = '🚫';
+                    typeIcon = '<i class="fa-solid fa-phone-slash"></i>';
                     typeLabel = '부재중 전화';
-                    typeColor = '#ff3b30'; // 빨간색
+                    typeColor = '#ff3b30';
                 }
-                else if (h.type === 'rejected') { // [NEW] 거절됨 상태 추가
-                    typeIcon = '⛔';
+                else if (h.type === 'rejected') {
+                    typeIcon = '<i class="fa-solid fa-xmark"></i>';
                     typeLabel = '통화 거절됨';
-                    typeColor = '#ff3b30'; // 빨간색
+                    typeColor = '#ff3b30';
                 }
                 else if (h.type === 'outgoing') {
-                    typeIcon = '↗️';
+                    typeIcon = '<i class="fa-solid fa-arrow-up-right"></i>';
                     typeLabel = '발신 (통화 성공)';
-                    typeColor = 'var(--pt-sub-text, #86868b)'; // 회색
+                    typeColor = 'var(--pt-sub-text, #86868b)';
                 }
                 else {
-                    typeIcon = '↙️';
+                    typeIcon = '<i class="fa-solid fa-arrow-down-left"></i>';
                     typeLabel = '수신 (통화 성공)';
-                    typeColor = '#34c759'; // 초록색
+                    typeColor = 'var(--pt-accent, #007aff)';
                 }
 
                 // 2. 통화 시간 표시 (부재중/거절은 시간 표시 안 함)
@@ -464,8 +469,11 @@ window.STPhone.Apps.Phone = (function() {
                      const sec = h.duration % 60;
                      const timeTxt = min > 0 ? `${min}분 ${sec}초` : `${sec}초`;
                      // 시간 뱃지 디자인
-                     durationStr = ` <span style="font-size:11px; color:${typeColor}; border:1px solid ${typeColor}; padding:0 4px; border-radius:4px; margin-left:5px;">${timeTxt}</span>`;
+                     durationStr = ` <span style="font-size:10px; font-weight:500; color:var(--pt-sub-text, #86868b); background:var(--pt-border, #e5e5e5); padding:2px 6px; border-radius:8px; margin-left:6px;">${timeTxt}</span>`;
                 }
+
+                // [NEW] 콘텍스트 미반영 알약 태그
+                const excludedTag = h.excludeFromContext === true ? '<span class="st-msg-no-context">미반영</span>' : '';
 
                 const hasLog = h.log && h.log.length > 0;
 
@@ -475,7 +483,7 @@ window.STPhone.Apps.Phone = (function() {
                     <div class="st-call-item">
                         <img class="st-call-avatar" src="${h.contactAvatar || DEFAULT_AVATAR}" onerror="this.src='${DEFAULT_AVATAR}'">
                         <div class="st-call-info">
-                            <div class="st-call-name">${h.contactName}${durationStr}</div>
+                            <div class="st-call-name">${h.contactName}${durationStr}${excludedTag}</div>
                             <!-- 상태 메시지(부재중/거절됨)만 빨간색으로 표시됩니다 -->
                             <div class="st-call-type" style="color: ${typeColor}; margin-top:3px;">
                                 ${typeIcon} ${typeLabel}
@@ -484,9 +492,9 @@ window.STPhone.Apps.Phone = (function() {
                         <div class="st-call-time">${formatTime(h.timestamp)}</div>
 
                         <div style="display:flex; gap:5px;">
-                            <button class="st-call-btn" style="background:#ff3b30;" data-action="delete-history" data-index="${index}">🗑️</button>
-                            ${hasLog ? `<button class="st-call-btn" style="background:#555;" data-action="view-log" data-index="${index}">📜</button>` : ''}
-                            <button class="st-call-btn" data-id="${h.contactId}" data-action="call">📞</button>
+                            <button class="st-call-btn" style="background:#ff3b30;" data-action="delete-history" data-index="${index}"><i class="fa-solid fa-trash"></i></button>
+                            ${hasLog ? `<button class="st-call-btn" style="background:#555;" data-action="view-log" data-index="${index}"><i class="fa-solid fa-file-lines"></i></button>` : ''}
+                            <button class="st-call-btn" data-id="${h.contactId}" data-action="call"><i class="fa-solid fa-phone"></i></button>
                         </div>
                     </div>`;
             });
@@ -505,7 +513,7 @@ window.STPhone.Apps.Phone = (function() {
                         <div class="st-call-info">
                             <div class="st-call-name">${c.name}</div>
                         </div>
-                        <button class="st-call-btn" data-id="${c.id}" data-action="call">📞</button>
+                        <button class="st-call-btn" data-id="${c.id}" data-action="call"><i class="fa-solid fa-phone"></i></button>
                     </div>`;
             });
         }
@@ -551,6 +559,109 @@ window.STPhone.Apps.Phone = (function() {
             deleteHistoryEntry(index);
             open();
         });
+
+        // [NEW] 통화 기록 우클릭 컨텍스트 메뉴
+        $('.st-call-item').on('contextmenu', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const index = $(this).find('[data-action="delete-history"]').data('index');
+            if (index !== undefined) {
+                showCallContextMenu(e.pageX, e.pageY, Number(index), $(this));
+            }
+        });
+    }
+
+    // [NEW] 통화 기록 우클릭 컨텍스트 메뉴 표시
+    function showCallContextMenu(x, y, index, $item) {
+        // 기존 메뉴 제거
+        $('#st-call-context-menu').remove();
+
+        loadHistory();
+        if (index < 0 || index >= callHistory.length) return;
+
+        const h = callHistory[index];
+        const isExcluded = h.excludeFromContext === true;
+
+        // 폰 컨테이너 기준 상대 좌표 계산
+        const $phoneContainer = $('#st-phone-container');
+        const phoneOffset = $phoneContainer.offset();
+        const relativeX = x - phoneOffset.left;
+        const relativeY = y - phoneOffset.top;
+
+        const menuHtml = `
+            <div id="st-call-context-menu" style="
+                position: absolute;
+                left: ${relativeX}px;
+                top: ${relativeY}px;
+                background: var(--pt-card-bg, #fff);
+                border-radius: 12px;
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                z-index: 3000;
+                min-width: 160px;
+                overflow: hidden;
+            ">
+                <div class="st-context-item" data-action="toggle-context" data-index="${index}" style="
+                    padding: 14px 16px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    font-size: 14px;
+                    color: var(--pt-text-color, #333);
+                    border-bottom: 1px solid var(--pt-border, #eee);
+                ">
+                    <i class="fa-solid ${isExcluded ? 'fa-eye' : 'fa-eye-slash'}" style="width:16px; color:${isExcluded ? '#34c759' : '#ff9500'};"></i>
+                    ${isExcluded ? '컨텍스트 반영' : '컨텍스트 미반영'}
+                </div>
+                <div class="st-context-item" data-action="close" style="
+                    padding: 14px 16px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    color: var(--pt-sub-text, #86868b);
+                    text-align: center;
+                ">취소</div>
+            </div>
+        `;
+
+        $phoneContainer.append(menuHtml);
+
+        // 클릭 이벤트
+        $('#st-call-context-menu [data-action="toggle-context"]').on('click', function() {
+            const idx = $(this).data('index');
+            toggleCallContextQuick(idx);
+            $('#st-call-context-menu').remove();
+        });
+
+        $('#st-call-context-menu [data-action="close"]').on('click', function() {
+            $('#st-call-context-menu').remove();
+        });
+
+        // 메뉴 외부 클릭 시 닫기
+        setTimeout(() => {
+            $(document).one('click', function() {
+                $('#st-call-context-menu').remove();
+            });
+        }, 100);
+    }
+
+    // [NEW] 빠른 컨텍스트 토글 (화면 새로고침)
+    function toggleCallContextQuick(index) {
+        loadHistory();
+        if (index < 0 || index >= callHistory.length) return;
+
+        const h = callHistory[index];
+        const wasExcluded = h.excludeFromContext === true;
+        h.excludeFromContext = !wasExcluded;
+        saveHistory();
+
+        if (h.excludeFromContext) {
+            toastr.info('🚫 이 통화 기록은 AI 컨텍스트에 반영되지 않습니다');
+        } else {
+            toastr.success('✅ 이 통화 기록이 AI 컨텍스트에 반영됩니다');
+        }
+
+        // 화면 새로고침
+        open();
     }
 
 
@@ -615,16 +726,16 @@ window.STPhone.Apps.Phone = (function() {
         $screen.append(`
             ${css}
             <div class="st-incoming-screen" id="st-incoming-screen">
-                <div class="st-incoming-status">📞 전화가 왔습니다</div>
+                <div class="st-incoming-status"><i class="fa-solid fa-phone-volume"></i> 전화가 왔습니다</div>
                 <img class="st-calling-avatar" src="${contact.avatar || DEFAULT_AVATAR}" onerror="this.src='${DEFAULT_AVATAR}'">
                 <div class="st-calling-name">${contact.name}</div>
                 <div class="st-incoming-actions">
                     <div class="st-incoming-btn-wrap">
-                        <button class="st-call-action-btn end" id="st-incoming-decline">📵</button>
+                        <button class="st-call-action-btn end" id="st-incoming-decline"><i class="fa-solid fa-phone-slash"></i></button>
                         <span class="st-incoming-label">거절</span>
                     </div>
                     <div class="st-incoming-btn-wrap">
-                        <button class="st-call-action-btn accept" id="st-incoming-accept">📞</button>
+                        <button class="st-call-action-btn accept" id="st-incoming-accept"><i class="fa-solid fa-phone"></i></button>
                         <span class="st-incoming-label">받기</span>
                     </div>
                 </div>
@@ -798,8 +909,8 @@ Response should be 1-2 sentences max.
                     <input class="st-calling-input" id="st-call-input" placeholder="말하기...">
                 </div>
                 <div class="st-calling-actions">
-                    <button class="st-call-action-btn mute" id="st-call-mute">🔇</button>
-                    <button class="st-call-action-btn end" id="st-call-end">📵</button>
+                    <button class="st-call-action-btn mute" id="st-call-mute"><i class="fa-solid fa-microphone-slash"></i></button>
+                    <button class="st-call-action-btn end" id="st-call-end"><i class="fa-solid fa-phone-slash"></i></button>
                 </div>
             </div>
         `);
@@ -1348,24 +1459,21 @@ ${currentTurnLine}
     }
 
     // [신규 기능] 통화 녹음 내용 보여주는 화면
-    function openLogViewer(index) {  // <--- ⭐ 이 줄을 추가해라! (중요)
+    function openLogViewer(index) {
         const h = callHistory[index];
         if (!h || !h.log || h.log.length === 0) {
             toastr.info("이 통화의 대화 내용이 없습니다.");
             return;
         }
 
-
+        const isExcluded = h.excludeFromContext === true;
         const date = new Date(h.timestamp);
         const dateStr = `${date.getFullYear()}.${date.getMonth()+1}.${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
 
         let logHtml = '';
         h.log.forEach(line => {
-            // [수정 포인트] 색상을 고정하지 않고, 테마 변수(var)를 써서 라이트/다크 모드 둘 다 대응합니다.
             const color = line.sender === '나' ? '#007aff' : 'var(--pt-text-color)';
             const align = line.sender === '나' ? 'right' : 'left';
-
-            // 배경색도 라이트모드에서 안 보이지 않도록 '테두리 색상 변수'를 활용해 회색빛으로 바꿉니다.
             const bg = line.sender === '나' ? 'rgba(0,122,255,0.1)' : 'var(--pt-border, #eee)';
 
             logHtml += `
@@ -1384,6 +1492,18 @@ ${currentTurnLine}
                     <button id="st-log-close" style="background:none; border:none; color:var(--pt-accent, #007aff); font-size:16px; cursor:pointer;">‹ 닫기</button>
                     <div style="flex:1; text-align:center; font-weight:bold; margin-right:40px;">통화 내용</div>
                 </div>
+                <!-- [NEW] 콘텍스트 미반영 토글 -->
+                <div style="padding:12px 15px; border-bottom:1px solid var(--pt-border, #333); display:flex; align-items:center; justify-content:space-between; background:var(--pt-card-bg, #2c2c2e);">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-brain" style="color:var(--pt-sub-text, #86868b);"></i>
+                        <span style="font-size:14px; color:var(--pt-text-color);">AI 컨텍스트 반영</span>
+                        ${isExcluded ? '<span class="st-msg-no-context">미반영</span>' : ''}
+                    </div>
+                    <button id="st-log-toggle-context" style="
+                        padding:8px 16px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;
+                        background:${isExcluded ? '#ff9500' : 'var(--pt-accent, #007aff)'}; color:white;
+                    ">${isExcluded ? '반영하기' : '미반영으로'}</button>
+                </div>
                 <div style="flex:1; overflow-y:auto; padding:15px; color:var(--pt-text-color);">
                     <div style="text-align:center; color:#666; font-size:12px; margin-bottom:20px;">
                         ${dateStr} <br> ${h.contactName}님과의 통화
@@ -1398,52 +1518,85 @@ ${currentTurnLine}
         $('#st-log-close').on('click', function() {
             $('#st-log-viewer').remove();
         });
-    }
-    /* ===============================================================
-       [NEW] AI 자동 전화 발신 시스템 (Prompt Injection + Observer)
-       =============================================================== */
 
-    // 1. AI 뇌에 "전화 거는 법" 주입 (참고한 확장의 프롬프트 원문)
+        $('#st-log-toggle-context').on('click', function() {
+            toggleCallContext(index);
+        });
+    }
+
+    // ========== 통화 기록 콘텍스트 미반영 토글 ==========
+    function toggleCallContext(index) {
+        loadHistory();
+        if (index < 0 || index >= callHistory.length) return;
+
+        const h = callHistory[index];
+        const wasExcluded = h.excludeFromContext === true;
+        h.excludeFromContext = !wasExcluded;
+        saveHistory();
+
+        if (h.excludeFromContext) {
+            toastr.info('🚫 이 통화 기록은 AI 컨텍스트에 반영되지 않습니다');
+        } else {
+            toastr.success('✅ 이 통화 기록이 AI 컨텍스트에 반영됩니다');
+        }
+
+        // 뷰어 새로고침
+        $('#st-log-viewer').remove();
+        openLogViewer(index);
+    }
     async function injectAiCallLogic() {
+        const parser = getSlashCommandParser();
+        if (!parser?.commands) return;
+
+        const ctx = window.SillyTavern?.getContext?.();
+        const charName = ctx?.characters?.[ctx?.characterId]?.name;
+
+        if (charName) {
+            const contacts = window.STPhone.Apps?.Contacts?.getAllContacts?.() || [];
+            const contact = contacts.find(c => c.name === charName);
+
+            if (contact?.disableProactiveCall) {
+                if (parser.commands['eject']) {
+                    try {
+                        await parser.commands['eject'].callback({}, 'st_phone_auto_call_logic');
+                    } catch (e) {}
+                }
+                return;
+            }
+        }
+
+        if (!parser.commands['inject']) return;
+
         const promptText = `
 [Phone Logic]
 If you want to initiate a voice call with User, append [call to user] at the very end of your response.
 NEVER decide the User's reaction or whether they pick up. Just generate the tag and stop.
 Wait for the system to process the call.`;
 
-        const parser = getSlashCommandParser();
-        if (parser && parser.commands['inject']) {
-            try {
-                // SillyTavern 시스템 프롬프트(Depth 2)에 몰래 끼워넣기
-                await parser.commands['inject'].callback({
-                    id: 'st_phone_auto_call_logic',
-                    position: 'chat',
-                    depth: 2,
-                    role: 'system'
-                }, promptText);
-            } catch (e) {
-                console.error("Call Logic Injection Failed", e);
-            }
-        }
+        try {
+            await parser.commands['inject'].callback({
+                id: 'st_phone_auto_call_logic',
+                position: 'chat',
+                depth: 2,
+                role: 'system'
+            }, promptText);
+        } catch (e) {}
     }
 
-    // 2. 채팅창 감시자 (AI가 [call to user] 태그를 쓰는지 지켜봄)
     function startIncomingCallObserver() {
         const chatRoot = document.getElementById('chat');
         if (!chatRoot) {
-            setTimeout(startIncomingCallObserver, 2000); // 로딩 덜 됐으면 재시도
+            setTimeout(startIncomingCallObserver, 2000);
             return;
         }
 
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
-                // 새 메시지가 떴을 때
                 mutation.addedNodes.forEach((node) => {
                     if (node.nodeType === 1 && node.classList.contains('mes')) {
                         checkMessageForCallTag(node);
                     }
                 });
-                // 메시지가 수정될 때 (스트리밍)
                 if (mutation.type === 'characterData' || mutation.type === 'childList') {
                     const target = mutation.target.parentElement?.closest('.mes');
                     if (target) checkMessageForCallTag(target);
@@ -1452,21 +1605,12 @@ Wait for the system to process the call.`;
         });
 
         observer.observe(chatRoot, { childList: true, subtree: true });
-
-        // 프롬프트 주입도 같이 실행 (확실하게 하기 위해 5초마다 체크)
         setInterval(injectAiCallLogic, 5000);
-        console.log("📞 [Phone] AI Call Observer Started.");
     }
 
-    // 3. 메시지 검사 및 전화 발신 트리거
     function checkMessageForCallTag(msgNode) {
-        // 이미 처리한 메시지는 무시
         if (msgNode.dataset.callChecked) return;
-
-        // 유저 메시지나 시스템 메시지는 무시 (AI 메시지만)
         if (msgNode.getAttribute('is_user') === 'true') return;
-
-        // [중요] "마지막 메시지"일 때만 작동 (옛날 메시지 로딩될 때 전화 울리면 안 되니까)
         if (!msgNode.classList.contains('last_mes')) return;
 
         const textDiv = msgNode.querySelector('.mes_text');
@@ -1474,66 +1618,47 @@ Wait for the system to process the call.`;
 
         const html = textDiv.innerHTML;
 
-        // [call to user] 태그가 있는지 확인 (대소문자 무관)
         if (html.toLowerCase().includes('[call to user]')) {
-            msgNode.dataset.callChecked = "true"; // 처리 완료 도장 쾅
+            msgNode.dataset.callChecked = "true";
 
-            // 1. 화면에서 태그 지워주기 (깔끔하게)
             textDiv.innerHTML = html.replace(/\[call to user\]/gi, '').trim();
-
-            // 2. 누가 걸었는지 찾기
             const charName = msgNode.getAttribute('ch_name') || "Unknown";
-
-            console.log(`📞 [Phone] Call trigger detected from: ${charName}`);
-
-            // 3. 전화 수신 화면 띄우기
             triggerIncomingCallByName(charName);
         }
     }
 
-    // 1단계 교체 코드: apps/phone.js
     function triggerIncomingCallByName(name) {
-        // 주소록에서 이름 일치하는 사람 찾기
         const contacts = window.STPhone.Apps.Contacts.getAllContacts();
         let contact = contacts.find(c => c.name === name);
 
-        // 주소록에 없는 경우 (연락처 자동저장 기능 삭제됨)
         if (!contact) {
-            // 현재 실리태번의 캐릭터 이미지를 가져오기 위한 노력
             let avatar = 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png';
-
-            if (window.SillyTavern && window.SillyTavern.getContext) {
-                const ctx = window.SillyTavern.getContext();
-                // 현재 대화중인 캐릭터의 정보가 있다면 가져옴
-                if (ctx.characters && ctx.characterId !== undefined) {
-                    const charData = ctx.characters[ctx.characterId];
-                    // 이름이 같다면 그 캐릭터의 아바타 사용
-                    if (charData && charData.name === name && charData.avatar) {
-                        avatar = charData.avatar;
-                        if (!avatar.startsWith('http') && !avatar.startsWith('data')) {
-                            avatar = '/characters/' + avatar;
-                        }
+            const ctx = window.SillyTavern?.getContext?.();
+            if (ctx?.characters && ctx.characterId !== undefined) {
+                const charData = ctx.characters[ctx.characterId];
+                if (charData?.name === name && charData.avatar) {
+                    avatar = charData.avatar;
+                    if (!avatar.startsWith('http') && !avatar.startsWith('data')) {
+                        avatar = '/characters/' + avatar;
                     }
                 }
             }
 
-            // [핵심 변경] 저장하지 않고 임시 객체(Temp Object)만 만듭니다.
             contact = {
-                id: 'temp_' + Date.now(), // 임시 ID
+                id: 'temp_' + Date.now(),
                 name: name,
                 avatar: avatar,
-                persona: "", // 내용은 나중에 실리태번에서 직접 긁어옴
+                persona: "",
                 tags: "",
-                isTemp: true // 임시 연락처임을 표시
+                isTemp: true
             };
         }
 
-        // 전화 수신 실행 (ID가 아니라 객체를 통째로 넘김)
+        if (contact.disableProactiveCall) return;
+
         receiveCall(contact);
     }
 
-
-    // [최종] 감시자 자동 실행 (문서 로드 완료 시)
     $(document).ready(function() {
         setTimeout(startIncomingCallObserver, 3000);
     });
