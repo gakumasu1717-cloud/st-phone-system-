@@ -1,0 +1,10 @@
+{
+    "name": "ST Phone System",
+    "version": "1.2.0",
+    "display_name": "📱 ST Phone",
+    "description": "Interactive Phone UI for SillyTavern. Press X to toggle.",
+    "author": "User",
+    "js": "index.js",
+    "css": "style.css"
+}
+
