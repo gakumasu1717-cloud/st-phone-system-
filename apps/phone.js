@@ -30,22 +30,22 @@ window.STPhone.Apps.Phone = (function() {
         const profileId = settings.connectionProfileId;
         const debugId = Date.now();
         const startedAt = performance?.now?.() || 0;
-        
+
         try {
             const context = window.SillyTavern?.getContext?.();
             if (!context) throw new Error('SillyTavern context not available');
-            
+
             // Connection Profile이 설정되어 있으면 ConnectionManager 사용
             if (profileId) {
                 const connectionManager = context.ConnectionManagerRequestService;
                 if (connectionManager && typeof connectionManager.sendRequest === 'function') {
                     console.debug('📞 [Phone][AI] sendRequest start', { debugId, profileId, maxTokens, promptLen: String(prompt || '').length });
-                    
+
                     const overrides = {};
                     if (maxTokens) {
                         overrides.max_tokens = maxTokens;
                     }
-                    
+
                     const result = await connectionManager.sendRequest(
                         profileId,
                         [{ content: prompt, role: 'user' }],
@@ -60,17 +60,17 @@ window.STPhone.Apps.Phone = (function() {
                     return String(text || '').trim();
                 }
             }
-            
+
             // Fallback: 기존 genraw/gen 명령어 사용
             const parser = getSlashCommandParser();
             const genCmd = parser?.commands['genraw'] || parser?.commands['gen'];
             if (!genCmd) throw new Error('AI 명령어를 찾을 수 없습니다');
-            
+
             const result = await genCmd.callback({ quiet: 'true' }, prompt);
             const elapsedMs = (performance?.now?.() || 0) - startedAt;
             console.debug('📞 [Phone][AI] slash gen done', { debugId, elapsedMs: Math.round(elapsedMs), outLen: String(result || '').length });
             return String(result || '').trim();
-            
+
         } catch (e) {
             const elapsedMs = (performance?.now?.() || 0) - startedAt;
             console.error('[Phone] generateWithProfile 실패:', { debugId, elapsedMs: Math.round(elapsedMs), profileId, maxTokens, error: e });
@@ -359,6 +359,12 @@ window.STPhone.Apps.Phone = (function() {
     let typeWriterInterval = null;
     // [신규추가] 다음 문장으로 넘어가는 대기 시간 제어용 변수
     let sentenceTimeout = null;
+    // [신규] AI가 말하는 중인지 추적
+    let isAISpeaking = false;
+    // [신규] AI가 말하다 끊겼을 때 마지막 발화 텍스트
+    let lastAIUtterance = '';
+    // [신규] 현재 화면에 타이핑 중인 문장 (끊겼을 때 정확한 문장 캡처용)
+    let currentDisplayedSentence = '';
 
     function getStorageKey() {
         const context = window.SillyTavern?.getContext?.();
@@ -763,7 +769,7 @@ window.STPhone.Apps.Phone = (function() {
 
             // AI에게 거절 사실 알림
             addHiddenLog('System', `[📵 Call Declined by ${userName}] (${userName} explicitly rejected ${contact.name}'s call)`);
-            
+
             // AI에게 즉시 알림 전송 (AI가 반응할 수 있도록)
             triggerAINotification(contact, 'declined', userName);
         });
@@ -805,7 +811,7 @@ window.STPhone.Apps.Phone = (function() {
 
                 // AI에게 부재중 사실 알림
                 addHiddenLog('System', `[📵 Call Missed] (${userName} did not answer ${contact.name}'s call - No response after 30 seconds)`);
-                
+
                 // AI에게 즉시 알림 전송
                 triggerAINotification(contact, 'missed', userName);
             }
@@ -831,7 +837,7 @@ window.STPhone.Apps.Phone = (function() {
                 }
             }
 
-            const reasonText = reason === 'declined' 
+            const reasonText = reason === 'declined'
                 ? `${userName} has REJECTED your phone call.`
                 : `${userName} did NOT ANSWER your phone call (missed call after 30 seconds).`;
 
@@ -878,7 +884,7 @@ Response should be 1-2 sentences max.
 
                 if (targetContactId && !contact.isTemp) {
                     window.STPhone.Apps.Messages.receiveMessage(targetContactId, smsText);
-                    
+
                     // 히든 로그에도 남기기
                     addHiddenLog(contact.name, `[📩 ${contact.name} -> ${userName}]: ${smsText}`);
                 }
@@ -1271,6 +1277,12 @@ ${currentTurnLine}
         typeWriterInterval = null;
         sentenceTimeout = null;
 
+        // [신규] AI 발화 상태 추적
+        if (sender === 'them') {
+            isAISpeaking = true;
+            lastAIUtterance = text;
+        }
+
         $msgArea.empty();
 
         const nameLabel = sender === 'me' ? '나' : (currentCall ? currentCall.contact.name : '상대방');
@@ -1300,6 +1312,8 @@ ${currentTurnLine}
             // [중요 수정] 더 이상 보여줄 문장이 없으면? -> 모든 대화 종료!
             if (currentSentenceIndex >= sentences.length) {
                 // 여기서 완료 신호를 보냅니다. (이때 전화를 끊으면 됩니다)
+                isAISpeaking = false; // [신규] AI 발화 완료
+                currentDisplayedSentence = ''; // [신규] 초기화
                 if (onComplete) onComplete();
                 return;
             }
@@ -1311,6 +1325,9 @@ ${currentTurnLine}
                 playNextSentence();
                 return;
             }
+
+            // [신규] 현재 타이핑 중인 문장 저장 (끊겼을 때 캡처용)
+            currentDisplayedSentence = sentence;
 
             $textBox.text(''); // 화면 비우기
 
@@ -1337,6 +1354,8 @@ ${currentTurnLine}
                          // 마지막 문장이었다면 -> 잠시 여운을 주고 완료 처리
                          // [핵심] 여기서 1.5초 정도 기다렸다가 "다 끝났어"라고 알려줍니다.
                          setTimeout(() => {
+                             isAISpeaking = false; // [신규] AI 발화 완료
+                             currentDisplayedSentence = ''; // [신규] 초기화
                              if (onComplete) onComplete();
                          }, 1500);
                     }
@@ -1353,6 +1372,13 @@ ${currentTurnLine}
 
     // [수정됨] status와 endedBy 인자를 받습니다.
     function endCall(status = null, endedBy = null) {
+        // [신규] AI가 말하는 중에 유저가 끊었는지 체크
+        const wasAISpeakingWhenHungUp = isAISpeaking && endedBy === 'user';
+        const savedContact = currentCall?.contact;
+        const savedUtterance = lastAIUtterance;
+        // [신규] 현재 화면에 표시 중이던 문장 캡처
+        const savedCurrentSentence = currentDisplayedSentence;
+
         if (callTimer) {
             clearInterval(callTimer);
             callTimer = null;
@@ -1361,6 +1387,11 @@ ${currentTurnLine}
         // 타이핑 효과 중단
         if (typeWriterInterval) clearInterval(typeWriterInterval);
         if (sentenceTimeout) clearTimeout(sentenceTimeout);
+
+        // [신규] AI 발화 상태 초기화
+        isAISpeaking = false;
+        lastAIUtterance = '';
+        currentDisplayedSentence = ''; // [신규] 초기화
 
         if (currentCall) {
             const { contactId, contact, isOutgoing } = currentCall;
@@ -1421,9 +1452,165 @@ ${currentTurnLine}
         } else {
             toastr.info('통화가 종료되었습니다');
         }
+
+        // [신규] AI가 말하던 중에 유저가 끊었으면 -> 문자로 반응 보내기
+        if (wasAISpeakingWhenHungUp && savedContact) {
+            setTimeout(() => {
+                generateHangUpTextReaction(savedContact, savedUtterance, savedCurrentSentence);
+            }, 2000); // 2초 후 문자 반응
+        }
     }
 
 
+    // ========== [신규] 통화 중 끊김 반응 문자 생성 ==========
+    async function generateHangUpTextReaction(contact, lastUtterance, currentSentence = '') {
+        if (!contact) return;
+
+        try {
+            // 설정 가져오기
+            const settings = window.STPhone.Apps?.Settings?.getSettings?.() || {};
+            const prefill = settings.prefill || '';
+            const maxContextTokens = settings.maxContextTokens || 4096;
+
+            // 유저 이름 가져오기
+            let userName = 'User';
+            const ctx = window.SillyTavern?.getContext?.();
+            if (ctx) {
+                userName = ctx.name2 || 'User';
+                if (ctx.chatId) {
+                    try {
+                        const cfg = JSON.parse(localStorage.getItem('st_phone_config_' + ctx.chatId) || '{}');
+                        if (cfg.userName) userName = cfg.userName;
+                    } catch(e) {}
+                }
+            }
+
+            // 끊긴 시점의 문장 설명 생성
+            let hangUpDescription = '';
+            if (currentSentence) {
+                hangUpDescription = `[${userName} hung up the phone while ${contact.name} was saying: "${currentSentence}"]`;
+            } else if (lastUtterance) {
+                hangUpDescription = `[${userName} hung up the phone while ${contact.name} was in the middle of speaking: "${lastUtterance}"]`;
+            } else {
+                hangUpDescription = `[${userName} hung up the phone while ${contact.name} was speaking]`;
+            }
+
+            // [멀티턴 방식] 메시지 배열 구성
+            const messages = [];
+
+            // 1. 시스템 프롬프트
+            const systemContent = `### Character Info
+Name: ${contact.name}
+Personality: ${contact.persona || '(not specified)'}
+
+### User Info
+Name: ${userName}
+Personality: ${settings.userPersonality || '(not specified)'}
+
+### Instructions
+You are ${contact.name}. You just had a phone call with ${userName}, but ${userName} suddenly hung up on you mid-sentence.
+Write a SHORT text message (SMS) reacting to being hung up on.
+React naturally based on what you were saying when cut off. This could be confused, annoyed, worried, sad, hurt, or any other appropriate reaction based on the character's personality.
+Keep it natural and in-character. 1-3 sentences max.
+Do NOT include any brackets, tags, or meta-text. Just write the message content directly.
+${prefill ? `Start your response with: ${prefill}` : ''}`;
+
+            messages.push({ role: 'system', content: systemContent });
+
+            // 2. 채팅 히스토리 (히든로그 포함)
+            if (ctx && ctx.chat && ctx.chat.length > 0) {
+                const reverseChat = ctx.chat.slice().reverse();
+                const collectedMessages = [];
+                let currentTokens = 0;
+
+                for (const m of reverseChat) {
+                    const msgContent = m.mes || '';
+                    const estimatedTokens = Math.ceil(msgContent.length / 2.5);
+
+                    if (currentTokens + estimatedTokens > maxContextTokens) {
+                        break;
+                    }
+
+                    collectedMessages.unshift({
+                        role: m.is_user ? 'user' : 'assistant',
+                        content: msgContent
+                    });
+                    currentTokens += estimatedTokens;
+                }
+
+                messages.push(...collectedMessages);
+            }
+
+            // 3. 끊긴 상황 설명 (유저 메시지로)
+            messages.push({ role: 'user', content: hangUpDescription });
+
+            // AI 응답 생성
+            const response = await generateWithProfile(messages, 256);
+            let replyText = String(response).trim();
+
+            // 프리필 제거
+            if (prefill && replyText.startsWith(prefill.trim())) {
+                replyText = replyText.substring(prefill.trim().length).trim();
+            }
+
+            // 괄호나 태그 제거
+            replyText = replyText.replace(/^\[.*?\]\s*/g, '').replace(/^"(.*)"$/, '$1').trim();
+
+            if (!replyText || replyText.length < 2) {
+                replyText = "...?";
+            }
+
+            // Messages 앱을 통해 문자 수신 처리
+            const Messages = window.STPhone.Apps?.Messages;
+            if (Messages && typeof Messages.receiveMessage === 'function') {
+                // Messages 앱의 receiveMessage 함수 직접 사용
+                await Messages.receiveMessage(contact.id, replyText);
+                // 히든 로그도 추가
+                addHiddenLog(contact.name, `[📩 ${contact.name} -> ${userName}]: ${replyText}`);
+            } else {
+                // fallback: 직접 저장 처리
+                const messagesKey = getMessagesStorageKey(contact.id);
+                if (messagesKey) {
+                    try {
+                        const msgs = JSON.parse(localStorage.getItem(messagesKey) || '[]');
+                        msgs.push({
+                            sender: 'them',
+                            text: replyText,
+                            timestamp: Date.now(),
+                            image: null
+                        });
+                        localStorage.setItem(messagesKey, JSON.stringify(msgs));
+
+                        // 히든 로그 추가
+                        addHiddenLog(contact.name, `[📩 ${contact.name} -> ${userName}]: ${replyText}`);
+
+                        // 알림 표시
+                        if (typeof toastr !== 'undefined') {
+                            toastr.info(`${contact.name}: ${replyText}`, '새 문자');
+                        }
+                    } catch (e) {
+                        console.error('[Phone] 문자 저장 실패:', e);
+                    }
+                }
+            }
+
+            console.debug('[Phone] 통화 끊김 반응 문자 전송:', {
+                contact: contact.name,
+                currentSentence: currentSentence || '(없음)',
+                reply: replyText
+            });
+
+        } catch (e) {
+            console.error('[Phone] generateHangUpTextReaction 실패:', e);
+        }
+    }
+
+    // 메시지 저장소 키 가져오기 헬퍼
+    function getMessagesStorageKey(contactId) {
+        const context = window.SillyTavern?.getContext?.();
+        if (!context?.chatId) return null;
+        return `st_phone_msgs_${context.chatId}_${contactId}`;
+    }
 
 
     function getSlashCommandParser() {

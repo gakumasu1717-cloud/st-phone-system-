@@ -932,14 +932,75 @@ function saveToStorage() {
                     border-bottom: none;
                 }
                 .st-checkbox-option input[type="checkbox"] {
-                    width: 18px;
-                    height: 18px;
+                    position: relative !important;
+                    width: 44px !important;
+                    height: 24px !important;
                     margin: 0;
                     margin-top: 2px;
-                    accent-color: var(--pt-accent, #007aff);
-                    cursor: pointer;
+                    -webkit-appearance: none !important;
+                    -moz-appearance: none !important;
+                    appearance: none !important;
+                    background-color: #78788080 !important;
+                    border-radius: 12px !important;
+                    cursor: pointer !important;
+                    border: none !important;
+                    outline: none !important;
+                    transition: background-color 0.3s !important;
                     flex-shrink: 0;
                 }
+                .st-checkbox-option input[type="checkbox"]:checked {
+                    background-color: #34c759 !important;
+                }
+                .st-checkbox-option input[type="checkbox"]::after {
+                    content: "" !important;
+                    position: absolute !important;
+                    top: 2px !important;
+                    left: 2px !important;
+                    width: 20px !important;
+                    height: 20px !important;
+                    background: #fff !important;
+                    border-radius: 50% !important;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+                    transition: transform 0.3s !important;
+                }
+                .st-checkbox-option input[type="checkbox"]:checked::after {
+                    transform: translateX(20px) !important;
+                }
+
+                /* 설정앱 내부 토글 스위치 스타일 강제 */
+                .st-settings-app .st-switch {
+                    position: relative !important;
+                    width: 44px !important;
+                    height: 24px !important;
+                    -webkit-appearance: none !important;
+                    -moz-appearance: none !important;
+                    appearance: none !important;
+                    background-color: #78788080 !important;
+                    border-radius: 12px !important;
+                    cursor: pointer !important;
+                    border: none !important;
+                    outline: none !important;
+                    transition: background-color 0.3s !important;
+                }
+                .st-settings-app .st-switch:checked {
+                    background-color: #34c759 !important;
+                }
+                .st-settings-app .st-switch::after {
+                    content: "" !important;
+                    position: absolute !important;
+                    top: 2px !important;
+                    left: 2px !important;
+                    width: 20px !important;
+                    height: 20px !important;
+                    background: #fff !important;
+                    border-radius: 50% !important;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+                    transition: transform 0.3s !important;
+                }
+                .st-settings-app .st-switch:checked::after {
+                    transform: translateX(20px) !important;
+                }
+
                 .st-checkbox-option-content {
                     flex: 1;
                 }
