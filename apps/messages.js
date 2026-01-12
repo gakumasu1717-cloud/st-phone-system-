@@ -1663,8 +1663,8 @@ function addMessage(contactId, sender, text, imageUrl = null, addTimestamp = fal
         currentGroupId = null;
         currentChatType = 'dm';
 
-        // 메인 화면에서는 홈바 표시
-        $('#st-home-btn').show();
+        // 메인 화면에서는 홈바 표시 (모바일 포함)
+        $('#st-home-btn').removeClass('st-hidden');
 
         // 봇/유저 연락처 자동 동기화
         await window.STPhone.Apps?.Contacts?.syncAutoContacts?.();
@@ -1896,8 +1896,8 @@ function addMessage(contactId, sender, text, imageUrl = null, addTimestamp = fal
     function openChat(contactId) {
         if (replyTimer) clearTimeout(replyTimer);
 
-        // 홈바 숨김
-        $('#st-home-btn').hide();
+        // 홈바 숨김 (모바일 포함)
+        $('#st-home-btn').addClass('st-hidden');
 
         currentContactId = contactId;
         currentGroupId = null;
@@ -2236,8 +2236,8 @@ $('#st-chat-cam').off('click').on('click', () => {
     function openGroupChat(groupId) {
         if (replyTimer) clearTimeout(replyTimer);
 
-        // 홈바 숨김
-        $('#st-home-btn').hide();
+        // 홈바 숨김 (모바일 포함)
+        $('#st-home-btn').addClass('st-hidden');
 
         const settings = window.STPhone.Apps?.Settings?.getSettings?.() || {};
 

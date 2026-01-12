@@ -899,3 +899,8 @@
 .st-msg-wrapper.me {
     position: relative; /* 마커 위치 기준점 */
 }
+
+/* [NEW] 홈바 숨김 클래스 - !important 오버라이드용 */
+.st-phone-home-area.st-hidden {
+    display: none !important;
+}
