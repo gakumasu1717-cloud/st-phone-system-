@@ -1712,6 +1712,9 @@ function addMessage(contactId, sender, text, imageUrl = null, addTimestamp = fal
         currentGroupId = null;
         currentChatType = 'dm';
 
+        // 메인 화면에서는 홈바 표시
+        $('#st-home-btn').show();
+
         // 봇/유저 연락처 자동 동기화
         await window.STPhone.Apps?.Contacts?.syncAutoContacts?.();
 
@@ -1941,6 +1944,9 @@ function addMessage(contactId, sender, text, imageUrl = null, addTimestamp = fal
 /* 수정후 */
     function openChat(contactId) {
         if (replyTimer) clearTimeout(replyTimer);
+
+        // 홈바 숨김
+        $('#st-home-btn').hide();
 
         currentContactId = contactId;
         currentGroupId = null;
@@ -2278,6 +2284,9 @@ $('#st-chat-cam').off('click').on('click', () => {
     // ========== 그룹 채팅방 ==========
     function openGroupChat(groupId) {
         if (replyTimer) clearTimeout(replyTimer);
+
+        // 홈바 숨김
+        $('#st-home-btn').hide();
 
         const settings = window.STPhone.Apps?.Settings?.getSettings?.() || {};
 
@@ -2980,7 +2989,7 @@ If you want to ignore, reply ONLY with: [IGNORE]`;
             // [안읽씹 / 읽씹 로직]
             if (replyText.includes('[UNREAD]')) {
                 console.log('📱 [Messages][Interrupt] 봇이 안읽씹(Unread) 선택');
-                addHiddenLog('System', `(System: The partner has not checked the message yet. Message remains 'Unread'.)`);
+                addHiddenLog('System', `[UNREAD]`);
                 if ($('#st-typing').length) $('#st-typing').hide();
                 isGenerating = false;
                 window.STPhone.isPhoneGenerating = false;
@@ -2990,7 +2999,7 @@ If you want to ignore, reply ONLY with: [IGNORE]`;
             if (replyText.includes('[IGNORE]') || replyText.startsWith('[📩')) {
                 console.log('📱 [Messages][Interrupt] 봇이 읽씹(Ignore) 선택');
                 if (settings.readReceiptEnabled) markMessagesAsRead(contactId);
-                addHiddenLog('System', `(System: The partner read the message but decided not to reply.)`);
+                addHiddenLog('System', `[IGNORE]`);
                 if ($('#st-typing').length) $('#st-typing').hide();
                 isGenerating = false;
                 window.STPhone.isPhoneGenerating = false;
@@ -3278,7 +3287,7 @@ Example of WRONG output: "I can't believe you did this. [BLOCK]" ← WRONG, tag 
             // [안읽씹 로직]
             if (replyText.includes('[UNREAD]')) {
                 console.log('📱 [Messages] 봇이 안읽씹(Unread) 선택');
-                addHiddenLog('System', `(System: The partner has not checked the message yet. Message remains 'Unread'.)`);
+                addHiddenLog('System', `[UNREAD]`);
                 if ($('#st-typing').length) $('#st-typing').hide();
                 isGenerating = false;
                 window.STPhone.isPhoneGenerating = false;
@@ -3289,7 +3298,7 @@ Example of WRONG output: "I can't believe you did this. [BLOCK]" ← WRONG, tag 
             if (replyText.includes('[IGNORE]') || replyText.startsWith('[📩')) {
                  console.log('📱 [Messages] 봇이 읽씹(Ignore) 선택');
                  if (settings.readReceiptEnabled) markMessagesAsRead(contactId);
-                 addHiddenLog('System', `(System: The partner read the message but decided not to reply.)`);
+                 addHiddenLog('System', `[IGNORE]`);
                  if ($('#st-typing').length) $('#st-typing').hide();
                  isGenerating = false;
                  window.STPhone.isPhoneGenerating = false;

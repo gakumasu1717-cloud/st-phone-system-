@@ -532,6 +532,18 @@ window.STPhone.Apps.Bank = (function() {
         CNY: { symbol: '¥', name: '위안 (CNY)', locale: 'zh-CN' }
     };
 
+    // 환율 정의 (KRW 기준)
+    const EXCHANGE_RATES = {
+        KRW: 1,
+        USD: 1350,    // 1 USD = 1350 KRW
+        EUR: 1450,    // 1 EUR = 1450 KRW
+        JPY: 9,       // 1 JPY = 9 KRW (대략 100엔 = 900원)
+        GBP: 1700,    // 1 GBP = 1700 KRW
+        CNY: 185      // 1 CNY = 185 KRW
+    };
+
+    let initialFundsSet = false; // 초기 자금 설정 여부
+
     let balance = 0;
     let currency = 'KRW';
     let recurringExpenses = [];
@@ -565,6 +577,7 @@ window.STPhone.Apps.Bank = (function() {
                 pendingTransfers = data.pendingTransfers || [];
                 transactionHistory = data.transactionHistory || [];
                 recurringEnabled = data.recurringEnabled !== false;
+                initialFundsSet = data.initialFundsSet || false; // 초기 자금 설정 여부 로드
             } else {
                 resetData();
             }
@@ -584,7 +597,8 @@ window.STPhone.Apps.Bank = (function() {
                 recurringIncomes,
                 pendingTransfers,
                 transactionHistory,
-                recurringEnabled
+                recurringEnabled,
+                initialFundsSet // 초기 자금 설정 여부 저장
             }));
         } catch (e) {
             console.error('[Bank] 저장 실패:', e);
@@ -599,6 +613,21 @@ window.STPhone.Apps.Bank = (function() {
         pendingTransfers = [];
         transactionHistory = [];
         recurringEnabled = true;
+        initialFundsSet = false; // 초기 자금 설정 여부 리셋
+    }
+
+    // 화폐 변환 함수 (환율 적용)
+    function convertCurrency(amount, fromCurrency, toCurrency) {
+        if (fromCurrency === toCurrency) return amount;
+        // 먼저 KRW로 변환
+        const amountInKRW = amount * EXCHANGE_RATES[fromCurrency];
+        // 목표 통화로 변환
+        const converted = amountInKRW / EXCHANGE_RATES[toCurrency];
+        // 소수점 처리 (USD, EUR, GBP는 소수점 2자리, 나머지는 정수)
+        if (['USD', 'EUR', 'GBP'].includes(toCurrency)) {
+            return Math.round(converted * 100) / 100;
+        }
+        return Math.round(converted);
     }
 
     // ========== 포맷팅 ==========
@@ -1188,13 +1217,33 @@ Only use the transfer/withdrawal formats above.`;
     }
 
     function renderSettingsTab($content) {
+        // 초기 자금 설정 가능 여부 체크
+        const canSetInitialFunds = !initialFundsSet && balance === 0 && transactionHistory.length === 0;
+
         const html = `
+            ${canSetInitialFunds ? `
             <div class="st-bank-section">
-                <div class="st-bank-section-title" style="margin-bottom:15px;">잔액 직접 설정</div>
+                <div class="st-bank-section-title" style="margin-bottom:15px;">💰 초기 자금 설정 (1회만 가능)</div>
                 <div class="st-bank-item" style="flex-direction:column;align-items:stretch;gap:12px;">
+                    <div style="font-size:12px;color:var(--pt-sub-text);margin-bottom:5px;">
+                        ⚠️ 한 번 설정하면 이 메뉴는 사라집니다. 이후에는 송금/출금으로만 잔액이 변동됩니다.
+                    </div>
+                    <input type="number" class="st-bank-modal-input" id="st-bank-set-initial"
+                           placeholder="초기 자금 입력" style="margin:0;">
+                    <button class="st-bank-modal-btn confirm" id="st-bank-apply-initial">초기 자금 설정</button>
+                </div>
+            </div>
+            ` : ''}
+
+            <div class="st-bank-section">
+                <div class="st-bank-section-title" style="margin-bottom:15px;">📊 잔액 수동 조정</div>
+                <div class="st-bank-item" style="flex-direction:column;align-items:stretch;gap:12px;">
+                    <div style="font-size:12px;color:var(--pt-sub-text);margin-bottom:5px;">
+                        디버그 용도로만 사용하세요. 거래 내역에 기록되지 않습니다.
+                    </div>
                     <input type="number" class="st-bank-modal-input" id="st-bank-set-balance"
                            value="${balance}" placeholder="새 잔액 입력" style="margin:0;">
-                    <button class="st-bank-modal-btn confirm" id="st-bank-apply-balance">적용</button>
+                    <button class="st-bank-modal-btn confirm" id="st-bank-apply-balance">수동 조정</button>
                 </div>
             </div>
 
@@ -1208,13 +1257,36 @@ Only use the transfer/withdrawal formats above.`;
 
         $content.append(html);
 
+        // 초기 자금 설정 버튼
+        $('#st-bank-apply-initial').on('click', () => {
+            const initialAmount = parseInt($('#st-bank-set-initial').val());
+            if (!isNaN(initialAmount) && initialAmount > 0) {
+                balance = initialAmount;
+                initialFundsSet = true; // 초기 자금 설정 완료 플래그
+                transactionHistory.unshift({
+                    id: Date.now(),
+                    type: 'income',
+                    amount: initialAmount,
+                    description: '💰 초기 자금 설정',
+                    timestamp: Date.now()
+                });
+                saveData();
+                updateBalanceDisplay();
+                toastr.success(`💰 초기 자금 ${formatAmount(initialAmount)}이 설정되었습니다!`);
+                renderTab('settings'); // 화면 새로고침 (초기 자금 섹션 숨김)
+            } else {
+                toastr.warning('올바른 금액을 입력하세요.');
+            }
+        });
+
+        // 수동 잔액 조정 버튼
         $('#st-bank-apply-balance').on('click', () => {
             const newBalance = parseInt($('#st-bank-set-balance').val());
             if (!isNaN(newBalance)) {
                 balance = newBalance;
                 saveData();
                 updateBalanceDisplay();
-                toastr.success('잔액이 변경되었습니다.');
+                toastr.success('잔액이 수동 조정되었습니다.');
             }
         });
 
@@ -1241,9 +1313,24 @@ Only use the transfer/withdrawal formats above.`;
             renderTab(tab);
         });
 
-        // 통화 변경
+        // 통화 변경 (환율 적용)
         $('#st-bank-currency').on('change', function() {
-            currency = $(this).val();
+            const newCurrency = $(this).val();
+            const oldCurrency = currency;
+
+            if (newCurrency !== oldCurrency && balance > 0) {
+                // 환율 적용하여 잔액 변환
+                const oldBalance = balance;
+                balance = convertCurrency(balance, oldCurrency, newCurrency);
+                currency = newCurrency;
+
+                const oldSymbol = CURRENCIES[oldCurrency].symbol;
+                const newSymbol = CURRENCIES[newCurrency].symbol;
+                toastr.info(`💱 환율 적용: ${oldBalance.toLocaleString()}${oldSymbol} → ${balance.toLocaleString()}${newSymbol}`);
+            } else {
+                currency = newCurrency;
+            }
+
             saveData();
             updateBalanceDisplay();
         });

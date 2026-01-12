@@ -1431,7 +1431,8 @@ Decide TWO things:
         
         const settings = window.STPhone.Apps?.Settings?.getSettings?.() || {};
         
-        if (settings.instagramPostEnabled === false) return;
+        // [수정] instagramPostEnabled = false면 포스팅만 스킵, 댓글은 계속 처리
+        const postingEnabled = settings.instagramPostEnabled !== false;
         
         // 댓글 처리 중이면 스킵 (포스팅과 별도로 체크)
         if (isProcessingComments) {
@@ -1495,7 +1496,10 @@ Decide TWO things:
             }
             
             // 2. 포스팅 처리 (확률 체크 적용, isGeneratingPost로 중복 방지)
-            if (isGeneratingPost) {
+            // [수정] postingEnabled가 false면 포스팅 전체 스킵
+            if (!postingEnabled) {
+                console.log('[Instagram] 자동 포스팅 비활성화 - 댓글만 처리됨');
+            } else if (isGeneratingPost) {
                 console.log('[Instagram] 포스팅 생성 중, 포스팅만 스킵 (댓글은 처리됨)');
             } else {
                 // 절대러 체크: 최근 포스팅 후 30초 내 스킵
@@ -1504,8 +1508,13 @@ Decide TWO things:
                     console.log('[Instagram] 최근 포스팅 후 30초 내 - 새 포스팅 스킵 (' + Math.round((POST_COOLDOWN - timeSinceLastPost) / 1000) + '초 남음)');
                 } else {
                     const chance = settings.instagramPostChance || 15;
+                    
+                    // 0%면 포스팅 완전 스킵 (댓글만 처리)
+                    if (chance === 0) {
+                        console.log('[Instagram] 확률 0% - 포스팅 스킵 (댓글만 처리)');
+                    } else {
                     const roll = Math.random() * 100;
-                    const shouldAttemptPost = roll <= chance;
+                    const shouldAttemptPost = roll < chance;  // <= 에서 < 로 변경 (0% 엣지케이스 방지)
                     
                     // 중복 캡션 체크
                     const captionKey = result.newPost.caption?.trim().toLowerCase();
@@ -1573,6 +1582,7 @@ Decide TWO things:
                         isGeneratingPost = false;  // 포스팅 완료
                     }
                 }  // shouldAttemptPost 블록 닫기
+                }  // chance !== 0 블록 닫기 (else)
                 }  // 쿨다운 체크 블록 닫기
             }  // isGeneratingPost 체크 블록 닫기
             
@@ -2582,10 +2592,10 @@ Write a short reply comment (1 sentence). Output ONLY the reply text, no quotes.
                     }, 500);
                 });
                 
-                // 채팅 변경 시 플래그 리셋
+                // 채팅 변경 시 플래그 리셋 및 데이터 리로드
                 if (eventTypes.CHAT_CHANGED) {
                     eventSource.on(eventTypes.CHAT_CHANGED, () => {
-                        console.log('[Instagram] 채팅 변경 감지 - 플래그 리셋');
+                        console.log('[Instagram] 채팅 변경 감지 - 데이터 리로드');
                         initialLoadComplete = false;
                         lastMessageIdOnLoad = -1;
                         // [수정] 채팅 로드 시간 재설정
@@ -2593,6 +2603,8 @@ Write a short reply comment (1 sentence). Output ONLY the reply text, no quotes.
                         // 새 채팅의 메시지 수 저장
                         const c = window.SillyTavern.getContext();
                         lastProcessedMsgId = c?.chat?.length || 0;
+                        // [NEW] 새 채팅에 맞는 포스트 데이터 리로드
+                        loadPosts();
                         setTimeout(() => { initialLoadComplete = true; }, 2000);
                     });
                 }
@@ -2740,20 +2752,24 @@ Write a short reply comment (1 sentence). Output ONLY the reply text, no quotes.
         const nameDiv = msgNode.querySelector('.name_text, .ch_name');
         const charName = nameDiv?.textContent?.trim() || getCharacterInfo()?.name || 'Unknown';
         
+        // instagramPostEnabled 설정 체크 (포스팅만 체크, 댓글/답글은 항상 허용)
+        const settings = window.STPhone.Apps?.Settings?.getSettings?.() || {};
+        const postingEnabled = settings.instagramPostEnabled !== false;
+        
         // [중요] 태그 제거 전에 포스트/댓글 생성 먼저!
-        // 1. [IG_POST] Instagram 포스팅
+        // 1. [IG_POST] Instagram 포스팅 (설정 체크)
         const igPostMatch = originalHtml.match(INSTAGRAM_PATTERNS.fixedPost);
-        if (igPostMatch && igPostMatch[1]) {
+        if (igPostMatch && igPostMatch[1] && postingEnabled) {
             createPostFromChat(charName, igPostMatch[1].trim());
         }
         
-        // 2. [IG_REPLY] 답글
+        // 2. [IG_REPLY] 답글 (항상 허용 - 인스타 깔려있으면 댓글 기능은 무조건 활성화)
         const igReplyMatch = originalHtml.match(INSTAGRAM_PATTERNS.fixedReply);
         if (igReplyMatch && igReplyMatch[1]) {
             addReplyFromChat(charName, igReplyMatch[1].trim());
         }
         
-        // 3. [IG_COMMENT] 댓글
+        // 3. [IG_COMMENT] 댓글 (항상 허용)
         const igCommentMatch = originalHtml.match(INSTAGRAM_PATTERNS.fixedComment);
         if (igCommentMatch && igCommentMatch[1]) {
             addCommentFromChat(charName, igCommentMatch[1].trim());
@@ -2761,12 +2777,12 @@ Write a short reply comment (1 sentence). Output ONLY the reply text, no quotes.
         
         // 4. 레거시 패턴들
         const parenPostMatch = originalHtml.match(INSTAGRAM_PATTERNS.parenPost);
-        if (parenPostMatch && parenPostMatch[1]) {
+        if (parenPostMatch && parenPostMatch[1] && postingEnabled) {
             createPostFromChat(charName, parenPostMatch[1].trim());
         }
         
         const legacyPostMatch = originalHtml.match(INSTAGRAM_PATTERNS.legacyPost);
-        if (legacyPostMatch && legacyPostMatch[1]) {
+        if (legacyPostMatch && legacyPostMatch[1] && postingEnabled) {
             createPostFromChat(charName, legacyPostMatch[1].trim());
         }
         

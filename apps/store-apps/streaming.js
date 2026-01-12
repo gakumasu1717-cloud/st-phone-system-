@@ -42,8 +42,6 @@ window.STPhone.Apps.Streaming = (function() {
             if (profileId) {
                 const connectionManager = context.ConnectionManagerRequestService;
                 if (connectionManager && typeof connectionManager.sendRequest === 'function') {
-                    console.debug('📺 [Streaming][AI] sendRequest start', { debugId, profileId, maxTokens, messageCount: messages.length });
-
                     const overrides = {};
                     if (maxTokens) {
                         overrides.max_tokens = maxTokens;
@@ -58,8 +56,6 @@ window.STPhone.Apps.Streaming = (function() {
                     );
 
                     const text = normalizeModelOutput(result);
-                    const elapsedMs = (performance?.now?.() || 0) - startedAt;
-                    console.debug('📺 [Streaming][AI] sendRequest done', { debugId, elapsedMs: Math.round(elapsedMs), outLen: String(text || '').length });
                     return String(text || '').trim();
                 }
             }
@@ -82,7 +78,6 @@ window.STPhone.Apps.Streaming = (function() {
                 errorStr.includes('SAFETY') ||
                 errorStr.includes('blocked') ||
                 errorStr.includes('content filter')) {
-                console.warn('📺 [Streaming][AI] Safety filter blocked:', { debugId, error: errorStr });
                 return '';
             }
             console.error('[Streaming] generateWithProfile failed:', e);
@@ -191,22 +186,40 @@ window.STPhone.Apps.Streaming = (function() {
                 padding: 14px;
                 border: 1px solid #3d3d3d;
                 border-radius: 8px;
-                background: #0e0e10;
-                color: #efeff1;
+                background: #0e0e10 !important;
+                color: #efeff1 !important;
                 font-size: 15px;
                 margin-bottom: 12px;
                 box-sizing: border-box;
                 outline: none;
+                -webkit-text-fill-color: #efeff1 !important;
+            }
+            .st-streaming-input::placeholder {
+                color: #adadb8 !important;
+                -webkit-text-fill-color: #adadb8 !important;
             }
             .st-streaming-input:focus {
                 border-color: #9146ff;
+                background: #0e0e10 !important;
+                color: #efeff1 !important;
+                -webkit-text-fill-color: #efeff1 !important;
+            }
+            #st-streaming-title {
+                background: #0e0e10 !important;
+                color: #efeff1 !important;
+                -webkit-text-fill-color: #efeff1 !important;
+            }
+            #st-streaming-title:focus {
+                background: #0e0e10 !important;
+                color: #efeff1 !important;
+                -webkit-text-fill-color: #efeff1 !important;
             }
             .st-streaming-textarea {
                 width: 100%;
                 padding: 14px;
                 border: 1px solid #3d3d3d;
                 border-radius: 8px;
-                background: #0e0e10;
+                background: #0e0e10 !important;
                 color: #efeff1 !important;
                 font-size: 15px;
                 margin-bottom: 12px;
@@ -214,12 +227,17 @@ window.STPhone.Apps.Streaming = (function() {
                 outline: none;
                 resize: none;
                 min-height: 80px;
+                -webkit-text-fill-color: #efeff1 !important;
             }
             .st-streaming-textarea::placeholder {
-                color: #adadb8;
+                color: #adadb8 !important;
+                -webkit-text-fill-color: #adadb8 !important;
             }
             .st-streaming-textarea:focus {
                 border-color: #9146ff;
+                background: #0e0e10 !important;
+                color: #efeff1 !important;
+                -webkit-text-fill-color: #efeff1 !important;
             }
             .st-streaming-toggle-row {
                 display: flex;
@@ -449,25 +467,52 @@ window.STPhone.Apps.Streaming = (function() {
     display: flex;
     gap: 10px;
     flex-shrink: 0;
-
-    /* 아래 한 줄을 추가해서 위로 확 올립니다 */
-    margin-bottom: 80px;
 }
             .st-streaming-action-input {
                 flex: 1;
                 padding: 12px;
                 border: 1px solid #3d3d3d;
                 border-radius: 8px;
-                background: #18181b;
+                background: #0e0e10 !important;
                 color: #efeff1 !important;
                 font-size: 14px;
                 outline: none;
+                -webkit-text-fill-color: #efeff1 !important;
             }
             .st-streaming-action-input::placeholder {
-                color: #adadb8;
+                color: #adadb8 !important;
+                -webkit-text-fill-color: #adadb8 !important;
             }
             .st-streaming-action-input:focus {
                 border-color: #9146ff;
+                background: #0e0e10 !important;
+                color: #efeff1 !important;
+                -webkit-text-fill-color: #efeff1 !important;
+            }
+            #st-streaming-action-input {
+                background: #0e0e10 !important;
+                color: #efeff1 !important;
+                -webkit-text-fill-color: #efeff1 !important;
+            }
+            #st-streaming-action-input:focus {
+                background: #0e0e10 !important;
+                color: #efeff1 !important;
+                -webkit-text-fill-color: #efeff1 !important;
+            }
+            /* 모든 입력 필드에 대한 범용 CSS */
+            .st-streaming-setup input[type="text"],
+            .st-streaming-setup input,
+            .st-streaming-app input {
+                background: #0e0e10 !important;
+                color: #efeff1 !important;
+                -webkit-text-fill-color: #efeff1 !important;
+            }
+            .st-streaming-setup input[type="text"]:focus,
+            .st-streaming-setup input:focus,
+            .st-streaming-app input:focus {
+                background: #0e0e10 !important;
+                color: #efeff1 !important;
+                -webkit-text-fill-color: #efeff1 !important;
             }
             .st-streaming-action-btn {
                 background: #9146ff;
@@ -708,6 +753,19 @@ window.STPhone.Apps.Streaming = (function() {
         return amount.toLocaleString() + '원';
     }
 
+    // ========== 방송 프로필 저장/불러오기 ==========
+    function getStreamProfile() {
+        const saved = localStorage.getItem('st-streaming-profile');
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) { }
+        }
+        return { nickname: '', concept: '', outfit: '' };
+    }
+
+    function saveStreamProfile(profile) {
+        localStorage.setItem('st-streaming-profile', JSON.stringify(profile));
+    }
+
     // RP 날짜 가져오기 (캘린더 앱 연동)
     function getRpDateString() {
         const Calendar = window.STPhone?.Apps?.Calendar;
@@ -723,25 +781,67 @@ window.STPhone.Apps.Streaming = (function() {
         return `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 ${days[now.getDay()]}요일`;
     }
 
+    // 폰 로그 숨김 처리 (UI에서만 숨기고 프롬프트에는 포함)
+    const FLING_LOG_MARKER = '[📺';
+    let phoneLogObserver = null;
+
+    function hidePhoneLogs() {
+        $('#chat .mes').each(function() {
+            const $mes = $(this);
+            const mesText = $mes.find('.mes_text').text();
+            if (mesText.includes(FLING_LOG_MARKER)) {
+                $mes.css('display', 'none');
+            }
+        });
+    }
+
+    function setupPhoneLogHider() {
+        // 기존 로그 숨기기
+        hidePhoneLogs();
+        
+        // 이미 옵저버가 있으면 스킵
+        if (phoneLogObserver) return;
+        
+        const chatContainer = document.getElementById('chat');
+        if (!chatContainer) return;
+        
+        // 새 메시지 추가 시 자동으로 숨기기
+        phoneLogObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) {
+                        const mesText = node.querySelector?.('.mes_text');
+                        if (mesText && mesText.textContent.includes(FLING_LOG_MARKER)) {
+                            node.style.display = 'none';
+                        }
+                    }
+                });
+            });
+        });
+        
+        phoneLogObserver.observe(chatContainer, { childList: true, subtree: true });
+    }
+
     function addHiddenLog(speaker, text) {
         if (!window.SillyTavern) return;
         const context = window.SillyTavern.getContext();
         if (!context || !context.chat) return;
 
+        // 프롬프트에 포함되는 일반 메시지로 추가
         context.chat.push({
             name: speaker,
             is_user: false,
             is_system: false,
             send_date: Date.now(),
-            mes: text,
-            extra: {
-                is_phone_log: true
-            }
+            mes: text
         });
 
         if (window.SlashCommandParser && window.SlashCommandParser.commands['savechat']) {
             window.SlashCommandParser.commands['savechat'].callback({});
         }
+
+        // UI에서 즉시 숨기기
+        setTimeout(hidePhoneLogs, 50);
     }
 
     // ========== Image Generation ==========
@@ -821,67 +921,227 @@ Output ONLY tags, no explanation.
             }).join('\n');
         }
 
+        // 화폐 정보 가져오기 (은행 앱 연동)
+        const Bank = window.STPhone?.Apps?.Bank;
+        let currencySymbol = '원';
+        let currencyCode = 'KRW';
+        if (Bank && typeof Bank.getCurrency === 'function') {
+            currencyCode = Bank.getCurrency();
+            const currencyMap = {
+                'KRW': '원', 'USD': '$', 'EUR': '€', 'JPY': '¥', 'GBP': '£', 'CNY': '¥'
+            };
+            currencySymbol = currencyMap[currencyCode] || '원';
+        }
+
+        // 화폐별 후원 금액 범위 설정
+        const donationRanges = {
+            'KRW': {
+                regular: '1,000~10,000원',
+                medium: '10,000~50,000원',
+                big: '100,000~1,000,000원'
+            },
+            'USD': {
+                regular: '$1~$10',
+                medium: '$10~$50',
+                big: '$100~$1,000'
+            },
+            'EUR': {
+                regular: '€1~€10',
+                medium: '€10~€50',
+                big: '€100~€1,000'
+            },
+            'JPY': {
+                regular: '¥100~¥1,000',
+                medium: '¥1,000~¥5,000',
+                big: '¥10,000~¥100,000'
+            },
+            'GBP': {
+                regular: '£1~£10',
+                medium: '£10~£50',
+                big: '£100~£1,000'
+            },
+            'CNY': {
+                regular: '¥5~¥50',
+                medium: '¥50~¥300',
+                big: '¥500~¥5,000'
+            }
+        };
+        const ranges = donationRanges[currencyCode] || donationRanges['KRW'];
+
+        // 화폐별 시청자 국적 설정 (언어는 모두 한국어, 유저네임만 국적에 맞게)
+        const nationalityMap = {
+            'KRW': {
+                nationality: '한국인',
+                usernameStyle: '한국어 또는 영어 닉네임 (예: 별빛소녀, xXGameMasterXx, 귀여운토끼, 시청자92)',
+                exampleChat: '[별빛소녀]: 헐 뭐하는거야 ㅋㅋㅋ\n[xXGameMasterXx]: 오 방금 들어왔는데 뭐함?\n[귀여운토끼]: ㅎㅇㅎㅇ\n[시청자92]: 재밌냐 이거\n[익명이]: ㄹㅇ 뭔상황임'
+            },
+            'USD': {
+                nationality: '미국인/국제 시청자',
+                usernameStyle: '영어 닉네임 (예: starlightgirl, xXGameMasterXx, cutebunny22, viewer92, anon_user)',
+                exampleChat: '[starlightgirl]: 헐 뭐하는거야 ㅋㅋㅋ\n[xXGameMasterXx]: 오 방금 들어왔는데 뭐함?\n[cutebunny22]: ㅎㅇㅎㅇ\n[viewer92]: 재밌냐 이거\n[anon_user]: ㄹㅇ 뭔상황임'
+            },
+            'EUR': {
+                nationality: '유럽인 (다양한 국적 혼합)',
+                usernameStyle: '유럽풍 영어 닉네임 (예: starlight_eu, GameMaster_DE, bunny_fr, viewer_uk, anon_es)',
+                exampleChat: '[starlight_eu]: 헐 뭐하는거야 ㅋㅋㅋ\n[GameMaster_DE]: 오 방금 들어왔는데 뭐함?\n[bunny_fr]: ㅎㅇㅎㅇ\n[viewer_uk]: 재밌냐 이거\n[anon_es]: ㄹㅇ 뭔상황임'
+            },
+            'JPY': {
+                nationality: '일본인',
+                usernameStyle: '일본어 또는 영어 닉네임 (예: 星空少女, xXゲームマスターXx, かわいいうさぎ, 視聴者92, 匿名さん)',
+                exampleChat: '[星空少女]: 헐 뭐하는거야 ㅋㅋㅋ\n[xXゲームマスターXx]: 오 방금 들어왔는데 뭐함?\n[かわいいうさぎ]: ㅎㅇㅎㅇ\n[視聴者92]: 재밌냐 이거\n[匿名さん]: ㄹㅇ 뭔상황임'
+            },
+            'GBP': {
+                nationality: '영국인',
+                usernameStyle: '영국풍 영어 닉네임 (예: starlight_uk, GameMaster_brit, bunnylove, viewer_london, anon_uk)',
+                exampleChat: '[starlight_uk]: 헐 뭐하는거야 ㅋㅋㅋ\n[GameMaster_brit]: 오 방금 들어왔는데 뭐함?\n[bunnylove]: ㅎㅇㅎㅇ\n[viewer_london]: 재밌냐 이거\n[anon_uk]: ㄹㅇ 뭔상황임'
+            },
+            'CNY': {
+                nationality: '중국인',
+                usernameStyle: '중국어 또는 영어 닉네임 (예: 星光女孩, 游戏大师, 可爱兔子, 观众92, 匿名用户)',
+                exampleChat: '[星光女孩]: 헐 뭐하는거야 ㅋㅋㅋ\n[游戏大师]: 오 방금 들어왔는데 뭐함?\n[可爱兔子]: ㅎㅇㅎㅇ\n[观众92]: 재밌냐 이거\n[匿名用户]: ㄹㅇ 뭔상황임'
+            }
+        };
+        const nationalityInfo = nationalityMap[currencyCode] || nationalityMap['KRW'];
+
+        // 커스텀 프롬프트 가져오기 (설정 앱에서)
+        const flingPrompt = settings.flingStreamPrompt || null;
+
         // Build messages array
         const messages = [];
 
-        // System prompt
-        const systemContent = `### Registered Contacts (may appear in chat based on their personality and chat history context)
+        // System prompt - 커스텀 또는 기본 프롬프트 사용
+        let systemContent;
+        if (flingPrompt) {
+            // 커스텀 프롬프트 변수 치환
+            systemContent = flingPrompt
+                .replace(/\{\{contactsInfo\}\}/gi, contactsInfo || '(No contacts registered)')
+                .replace(/\{\{chatHistory\}\}/gi, chatHistory || '(No recent history)')
+                .replace(/\{\{myName\}\}/gi, myName)
+                .replace(/\{\{userName\}\}/gi, myName)
+                .replace(/\{\{userPersonality\}\}/gi, settings.userPersonality || '(not specified)')
+                .replace(/\{\{userTags\}\}/gi, settings.userTags || '(not specified)')
+                .replace(/\{\{followerCount\}\}/gi, followerCount)
+                .replace(/\{\{viewerCount\}\}/gi, viewerCount)
+                .replace(/\{\{streamTitle\}\}/gi, streamData?.title || 'Untitled Stream')
+                .replace(/\{\{action\}\}/gi, action)
+                .replace(/\{\{currencySymbol\}\}/gi, currencySymbol)
+                .replace(/\{\{currencyCode\}\}/gi, currencyCode)
+                .replace(/\{\{regularDonation\}\}/gi, ranges.regular)
+                .replace(/\{\{mediumDonation\}\}/gi, ranges.medium)
+                .replace(/\{\{bigDonation\}\}/gi, ranges.big)
+                .replace(/\{\{nationality\}\}/gi, nationalityInfo.nationality)
+                .replace(/\{\{usernameStyle\}\}/gi, nationalityInfo.usernameStyle)
+                .replace(/\{\{exampleChat\}\}/gi, nationalityInfo.exampleChat);
+        } else {
+            // 기본 프롬프트 (화폐 동적 적용 + 현실적 반응 + 국적 기반 유저네임)
+            const hasAppearanceInfo = settings.userTags && settings.userTags.trim().length > 0;
+            const appearanceNote = hasAppearanceInfo
+                ? `(Described as: ${settings.userTags})`
+                : `(No appearance specified - treat as average/unknown looking person. Do NOT assume attractive.)`;
+
+            // 스트리머 프로필 정보
+            const streamerProfile = streamData?.profile || {};
+            let streamerInfo = `Name: ${myName}`;
+            if (streamerProfile.nickname && streamerProfile.nickname !== myName) {
+                streamerInfo += `\nStream Nickname: ${streamerProfile.nickname}`;
+            }
+            if (streamerProfile.concept) {
+                streamerInfo += `\nConcept/Gimmick: ${streamerProfile.concept}`;
+            }
+            if (streamerProfile.outfit) {
+                streamerInfo += `\nOutfit: ${streamerProfile.outfit}`;
+            }
+            streamerInfo += `\nPersonality: ${settings.userPersonality || '(not specified)'}`;
+            streamerInfo += `\nAppearance: ${appearanceNote}`;
+            streamerInfo += `\nCurrent Followers: ${followerCount}`;
+
+            systemContent = `### Registered Contacts (may appear in chat based on their personality)
 ${contactsInfo || '(No contacts registered)'}
 
-### Recent Chat History (RP context outside of streaming)
-${chatHistory || '(No recent history)'}
+### Streamer Profile
+${streamerInfo}
 
-### User Profile
-Name: ${myName}
-Personality: ${settings.userPersonality || '(not specified)'}
-Appearance: ${settings.userTags || '(not specified)'}
-Current Followers: ${followerCount}
+### FLING LIVE STREAMING - REALISTIC CHAT SIMULATION
 
-### FLING LIVE STREAMING SYSTEM PROMPT
-
-You are generating viewer chat reactions for ${myName}'s Fling livestream.
+Generate REALISTIC livestream viewer chat for ${streamerProfile.nickname || myName}'s stream.
+Viewers are ${nationalityInfo.nationality} - use appropriate usernames!
 
 Stream Title: "${streamData?.title || 'Untitled Stream'}"
-Streamer's Current Followers: ${followerCount}
 Current Viewers: ${viewerCount}
 Current Action: "${action}"
 
-### OUTPUT FORMAT
-FIRST LINE MUST BE viewer count in this format:
-[VIEWERS: number]
+### OUTPUT FORMAT (STRICT!)
+LINE 1: [VIEWERS: number]
+LINE 2+: [username]: message (one message per line)
 
-Then generate 3-8 chat messages. Each line should be ONE chat message in this format:
-[username]: message
+Donation format: [username] donated X${currencySymbol}: message
 
-For donations, use this format:
-[username] donated X원: donation message
+### CRITICAL RULES - READ CAREFULLY!
 
-For BIG donations (jackpot moments), use larger amounts:
-[username] donated X원: donation message
+**FORMAT RULES:**
+1. NEVER use quotation marks ("") in chat messages! Write raw text only.
+2. Output [VIEWERS: X] on the FIRST line, then chat messages.
+3. Generate 3-8 messages. Each message = one line.
+4. ALL messages must be in Korean (한국어)! Only USERNAMES reflect nationality.
 
-### RULES
-1. FIRST decide viewer count. Start from current viewers (${viewerCount}) and adjust based on content interest. Output [VIEWERS: X] first.
-2. All chat messages MUST be in Korean (한국어)
-3. Usernames should be creative Korean-style nicknames or English usernames
-4. Mix of reactions: excited, funny, supportive, teasing, questions
-5. DONATIONS:
-   - Regular donations: 1,000~10,000원 (occasional)
-   - Medium donations: 10,000~50,000원 (rare)
-   - BIG JACKPOT donations: 100,000~1,000,000원 (VERY RARE - only when content is EXTREMELY exciting, viewer is a super fan from contacts, or maximum dopamine moment)
-   - Consider if a contact is watching and has strong feelings for ${myName} - they might donate big!
-6. If a registered contact would realistically watch this stream (based on their personality and relationship with ${myName}), they MAY appear in chat using their actual name. Fans/lovers may donate big!
-7. Chat should feel natural and varied - not everyone reacts the same way
-8. Consider the action ${myName} is doing and react appropriately
-9. Some messages can be emotes only: ㅋㅋㅋ, ㅠㅠ, ㄷㄷ, 헐, 와, 대박 등
-10. NO English except for usernames
-11. Do NOT generate ${myName}'s responses - only viewer chat
-12. Viewer count changes naturally - interesting/provocative content = viewers increase, boring = decrease
+**USERNAME STYLE (based on viewer nationality: ${nationalityInfo.nationality}):**
+${nationalityInfo.usernameStyle}
 
-### Generate [VIEWERS: X] first, then viewer chat:`;
+**REALISM RULES:**
+5. NOT everyone is nice! Include variety:
+   - Supportive fans (30%)
+   - Neutral observers (30%)
+   - Skeptics/critics (20%)
+   - Trolls/haters - mild negativity (10%)
+   - Random/off-topic (10%)
 
+6. APPEARANCE MATTERS:
+   ${hasAppearanceInfo
+     ? `- ${myName} is described as: ${settings.userTags}. React accordingly.`
+     : `- No appearance info = assume AVERAGE looking. Do NOT call them handsome/pretty without reason!`}
+   - If no visual shown, don't comment on looks
+   - Some viewers may be rude about appearance
+   - Don't always compliment - that's unrealistic
+
+7. REALISTIC KOREAN CHAT STYLES (모든 채팅은 한국어로!):
+   - Short messages: ㅋㅋ, ㅎㅇ, ㄷㄷ, 헐, 와, 뭐함
+   - Typos/slang: ㄹㅇ, ㅇㅈ, ㄱㅇㄷ, 개웃김, 미쳤네
+   - Questions: 뭐하는거임?, 이게뭔데, 왜함?
+   - Skeptical: 뭐야이게, 어 그래서?, 재미없는데
+   - Light trolling: ㅋㅋㅋ노잼, 나가요~, 뭔솰
+
+8. DONATIONS (${currencyCode}):
+   - ${ranges.regular}: Common (short supportive messages)
+   - ${ranges.medium}: Uncommon, needs good content
+   - ${ranges.big}: EXTREMELY RARE! Only for spectacular moments.
+   - Most messages have NO donation!
+
+9. VIEWER COUNT:
+   - Boring content: viewers DECREASE (-5 to -20)
+   - Normal content: slight change (-5 to +10)
+   - Interesting: moderate increase (+10 to +30)
+   - Viral moment: big jump (+30 to +100)
+
+10. If registered contacts appear, they act according to their personality.
+
+### EXAMPLE OUTPUT (Korean messages with ${nationalityInfo.nationality} usernames):
+[VIEWERS: ${viewerCount + Math.floor(Math.random() * 20) - 5}]
+${nationalityInfo.exampleChat}
+
+### NOW GENERATE for action: "${action}"`;
+        }
+
+        // 메시지 배열 구성 - 프롬프트가 유저 메시지 위에 오도록
+        // 1. 시스템 프롬프트
         messages.push({ role: 'system', content: systemContent });
 
-        // Add story context
+        // 2. 유저 액션 (시스템 프롬프트 바로 다음)
+        messages.push({
+            role: 'user',
+            content: `[${myName}'s action on stream]: ${action}\n\nGenerate viewer chat reactions:`
+        });
+
+        // 3. 그 다음에 스토리 컨텍스트 (선택적)
         if (ctx.chat && ctx.chat.length > 0) {
             const reverseChat = ctx.chat.slice().reverse();
             const collectedMessages = [];
@@ -897,14 +1157,9 @@ For BIG donations (jackpot moments), use larger amounts:
                 });
                 currentTokens += estimatedTokens;
             }
-            messages.push(...collectedMessages);
+            // 스토리 컨텍스트를 중간에 삽입 (시스템과 유저 액션 사이)
+            messages.splice(1, 0, ...collectedMessages);
         }
-
-        // User action
-        messages.push({
-            role: 'user',
-            content: `[${myName}'s action on stream]: ${action}\n\nGenerate viewer chat reactions in Korean:`
-        });
 
         // Prefill
         if (prefill) {
@@ -934,14 +1189,23 @@ For BIG donations (jackpot moments), use larger amounts:
                 continue;
             }
 
-            // Donation format: [username] donated X원: message
-            const donationMatch = line.match(/^\[?([^\]]+)\]?\s*(?:donated|후원|도네이션)\s*([\d,]+)\s*원?\s*:?\s*(.*)$/i);
+            // Donation format: 다양한 형식 지원
+            // [username] donated X원: message
+            // username donated $X: message
+            // [유저] 후원 1000원: 메시지
+            const donationMatch = line.match(/^\[?([^\]\d]+?)\]?\s*(?:donated|후원|도네이션)\s*[\$€¥£]?\s*([\d,]+)\s*[\$€¥£원]?\s*[:\uff1a]?\s*(.*)$/i);
             if (donationMatch) {
+                const username = donationMatch[1].trim();
+                const amount = parseInt(donationMatch[2].replace(/,/g, ''));
+                let message = donationMatch[3].trim();
+                // 따옴표 제거
+                message = message.replace(/^"|"$/g, '').replace(/^'|'$/g, '').trim();
+
                 chats.push({
                     type: 'donation',
-                    username: donationMatch[1].trim(),
-                    amount: parseInt(donationMatch[2].replace(/,/g, '')),
-                    message: donationMatch[3].trim()
+                    username: username,
+                    amount: amount,
+                    message: message
                 });
                 continue;
             }
@@ -950,7 +1214,9 @@ For BIG donations (jackpot moments), use larger amounts:
             const chatMatch = line.match(/^\[?([^\]:]+)\]?\s*:\s*(.+)$/);
             if (chatMatch) {
                 const username = chatMatch[1].trim();
-                const message = chatMatch[2].trim();
+                // 따옴표 제거 처리
+                let message = chatMatch[2].trim();
+                message = message.replace(/^"|"$/g, '').replace(/^'|'$/g, '').trim();
 
                 // Check if this is a registered contact
                 const contacts = window.STPhone?.Apps?.Contacts?.getAllContacts?.() || [];
@@ -980,6 +1246,9 @@ For BIG donations (jackpot moments), use larger amounts:
                 chats[chats.length - 1].viewerCount = viewerCount;
             }
         }
+
+        // 채팅이 없어도 시청자수는 업데이트됨 - 기본 채팅 생성 안함 (AI 응답 실패시 로그만)
+        // No chats parsed - just return empty array
 
         return chats;
     }
@@ -1081,8 +1350,10 @@ For BIG donations (jackpot moments), use larger amounts:
             $display.html(`<div style="padding: 20px; font-size: 16px;">${action}</div>`);
         }
 
-        // Hidden log for action
-        addHiddenLog(getUserName(), `[📺 FLING ACTION] ${getUserName()} on Fling stream: ${action}`);
+        // 유저 행동 히든로그 추가
+        const profile = streamData?.profile || {};
+        const streamerName = profile.nickname || getUserName();
+        addHiddenLog(streamerName, `[📺 FLING STREAMER ACTION] ${action}`);
 
         // Generate viewer response
         const response = await generateViewerResponse(action);
@@ -1103,6 +1374,9 @@ For BIG donations (jackpot moments), use larger amounts:
     // ========== UI Screens ==========
     function open() {
         loadData();
+        
+        // 폰 로그 숨김 처리 설정
+        setupPhoneLogHider();
 
         const $screen = window.STPhone.UI.getContentElement();
         if (!$screen || !$screen.length) return;
@@ -1128,6 +1402,9 @@ For BIG donations (jackpot moments), use larger amounts:
     function renderHomeScreen() {
         const $content = $('#st-streaming-content');
         $content.empty();
+
+        // 홈바 표시 (홈화면에서만)
+        $('#st-home-btn').show();
 
         const html = `
             <div class="st-streaming-home-card">
@@ -1175,6 +1452,9 @@ For BIG donations (jackpot moments), use larger amounts:
     function showSetupScreen() {
         const $content = $('#st-streaming-content');
         $content.empty();
+
+        // 방송 설정 화면에서는 홈바 숨김
+        $('#st-home-btn').hide();
 
         const html = `
             <div class="st-streaming-setup">
@@ -1224,14 +1504,25 @@ For BIG donations (jackpot moments), use larger amounts:
                 return;
             }
 
-            await startStream(title, firstAction);
+            // 저장된 프로필 불러오기
+            const profile = getStreamProfile();
+            await startStream(title, firstAction, profile);
         });
     }
 
-    async function startStream(title, firstAction) {
+    async function startStream(title, firstAction, profile = {}) {
         isLive = true;
-        // Initial viewer count starts at 0 - AI will decide how many viewers come
-        viewerCount = 0;
+        // 팔로워 기반 초기 시청자수 - 팔로워가 많을수록 초기 시청자 많음
+        const baseViewers = Math.floor(followerCount * 0.05); // 팔로워의 5%가 기본 시청자
+        const randomBonus = Math.floor(Math.random() * Math.max(10, followerCount * 0.02)); // 랜덤 보너스
+        viewerCount = Math.max(1, baseViewers + randomBonus); // 최소 1명
+
+        // 프로필 정보 저장
+        const streamerProfile = {
+            nickname: profile.nickname || getUserName(),
+            concept: profile.concept || '',
+            outfit: profile.outfit || ''
+        };
 
         const rpDate = getRpDateString();
         streamData = {
@@ -1241,11 +1532,22 @@ For BIG donations (jackpot moments), use larger amounts:
             earnings: 0,
             maxViewers: 0,
             newFollowers: 0,
-            actions: [{ action: firstAction, chats: [] }]
+            actions: [{ action: firstAction, chats: [] }],
+            profile: streamerProfile
         };
 
-        // Hidden log for stream start
-        addHiddenLog(getUserName(), `[📺 FLING STREAM STARTED] ${getUserName()} started a Fling livestream titled "${title}" on ${rpDate}. Current Followers: ${followerCount}. First action: ${firstAction}`);
+        // 히든 로그 - 더 간결하게
+        let profileDesc = '';
+        if (streamerProfile.nickname && streamerProfile.nickname !== getUserName()) {
+            profileDesc += ` as "${streamerProfile.nickname}"`;
+        }
+        if (streamerProfile.concept) {
+            profileDesc += ` (${streamerProfile.concept})`;
+        }
+        if (streamerProfile.outfit) {
+            profileDesc += ` wearing ${streamerProfile.outfit}`;
+        }
+        addHiddenLog(getUserName(), `Started Fling stream "${title}"${profileDesc}. Followers: ${followerCount}. Action: ${firstAction}`);
 
         renderLiveScreen(firstAction);
     }
@@ -1253,6 +1555,9 @@ For BIG donations (jackpot moments), use larger amounts:
     function renderLiveScreen(firstAction) {
         const $content = $('#st-streaming-content');
         $content.empty();
+
+        // 방송 중에는 홈바 숨김
+        $('#st-home-btn').hide();
 
         const html = `
             <div class="st-streaming-live">
@@ -1360,7 +1665,7 @@ For BIG donations (jackpot moments), use larger amounts:
         saveData();
 
         // Hidden log for stream end
-        addHiddenLog('System', `[📺 FLING STREAM ENDED] ${getUserName()}'s Fling stream "${streamData.title}" ended. Total earnings: ${formatMoney(streamData.earnings || 0)}, Max viewers: ${streamData.maxViewers}, New followers: +${newFollowers} (Total: ${followerCount})`);
+        addHiddenLog('System', `Fling stream "${streamData.title}" ended. Earnings: ${formatMoney(streamData.earnings || 0)}, Peak viewers: ${streamData.maxViewers}, New followers: +${newFollowers}`);
 
         renderEndScreen();
     }
@@ -1368,6 +1673,9 @@ For BIG donations (jackpot moments), use larger amounts:
     function renderEndScreen() {
         const $content = $('#st-streaming-content');
         $content.empty();
+
+        // 종료 화면에서는 홈바 숨김 (홈으로 가면 다시 표시)
+        $('#st-home-btn').hide();
 
         const duration = streamData.endTime - streamData.startTime;
         const minutes = Math.floor(duration / 60000);
@@ -1413,7 +1721,12 @@ For BIG donations (jackpot moments), use larger amounts:
         const $content = $('#st-streaming-content');
         $content.empty();
 
+        // 프로필 화면에서는 홈바 숨김
+        $('#st-home-btn').hide();
+
         const myName = getUserName();
+        const profile = getStreamProfile();
+        const displayName = profile.nickname || myName;
 
         const html = `
             <div class="st-streaming-profile">
@@ -1425,7 +1738,24 @@ For BIG donations (jackpot moments), use larger amounts:
                 <div class="st-streaming-profile-header">
                     <div class="st-streaming-profile-avatar">📺</div>
                     <div>
-                        <div class="st-streaming-profile-name">${myName}</div>
+                        <div class="st-streaming-profile-name" style="display: flex; align-items: center; gap: 8px;">
+                            ${displayName}
+                            <button id="st-streaming-profile-settings" style="
+                                background: rgba(255,255,255,0.1);
+                                border: none;
+                                color: #adadb8;
+                                width: 28px;
+                                height: 28px;
+                                border-radius: 50%;
+                                cursor: pointer;
+                                font-size: 14px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            " title="방송 프로필 설정">⚙️</button>
+                        </div>
+                        ${profile.concept ? `<div style="font-size: 12px; color: #adadb8; margin-top: 4px;">${profile.concept}</div>` : ''}
+                        ${profile.outfit ? `<div style="font-size: 11px; color: #777; margin-top: 2px;">👕 ${profile.outfit}</div>` : ''}
                         <div class="st-streaming-profile-stats">
                             <div class="st-streaming-profile-stat">
                                 <div class="st-streaming-profile-stat-value">${followerCount.toLocaleString()}</div>
@@ -1485,6 +1815,60 @@ For BIG donations (jackpot moments), use larger amounts:
                 startReplay(streamHistory[idx]);
             }
         });
+
+        // 프로필 설정 버튼 클릭
+        $('#st-streaming-profile-settings').on('click', showProfileSettingsScreen);
+    }
+
+    // 프로필 설정 화면
+    function showProfileSettingsScreen() {
+        const $content = $('#st-streaming-content');
+        $content.empty();
+
+        // 프로필 설정 화면에서는 홈바 숨김
+        $('#st-home-btn').hide();
+
+        const profile = getStreamProfile();
+
+        const html = `
+            <div class="st-streaming-setup">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <button class="st-streaming-back-btn" id="st-streaming-profile-back">‹</button>
+                    <span style="font-size: 18px; font-weight: 600;">방송 프로필 설정</span>
+                </div>
+
+                <div style="margin-bottom: 8px; font-size: 13px; color: #adadb8;">방송 닉네임</div>
+                <input type="text" class="st-streaming-input" id="st-streaming-nickname"
+                       placeholder="방송에서 사용할 닉네임 (예: 가면사나이, 게임왕)" value="${profile.nickname || ''}">
+
+                <div style="margin-bottom: 8px; font-size: 13px; color: #adadb8;">컨셉 / 특징</div>
+                <input type="text" class="st-streaming-input" id="st-streaming-concept"
+                       placeholder="컨셉 (예: 얼굴을 가면으로 가리고 있음)" value="${profile.concept || ''}">
+
+                <div style="margin-bottom: 8px; font-size: 13px; color: #adadb8;">옷차림</div>
+                <input type="text" class="st-streaming-input" id="st-streaming-outfit"
+                       placeholder="현재 옷차림 (예: 검은 후드티, 캐주얼)" value="${profile.outfit || ''}">
+
+                <div class="st-streaming-setup-actions" style="margin-top: 20px;">
+                    <button class="st-streaming-btn cancel" id="st-streaming-profile-cancel">취소</button>
+                    <button class="st-streaming-btn go-live" id="st-streaming-profile-save">💾 저장</button>
+                </div>
+            </div>
+        `;
+
+        $content.append(html);
+
+        $('#st-streaming-profile-back, #st-streaming-profile-cancel').on('click', renderProfileScreen);
+
+        $('#st-streaming-profile-save').on('click', () => {
+            const nickname = $('#st-streaming-nickname').val().trim();
+            const concept = $('#st-streaming-concept').val().trim();
+            const outfit = $('#st-streaming-outfit').val().trim();
+
+            saveStreamProfile({ nickname, concept, outfit });
+            toastr.success('방송 프로필이 저장되었습니다.');
+            renderProfileScreen();
+        });
     }
 
     // ========== Replay Mode ==========
@@ -1500,6 +1884,9 @@ For BIG donations (jackpot moments), use larger amounts:
     function renderReplayScreen() {
         const $content = $('#st-streaming-content');
         $content.empty();
+
+        // 리플레이 화면에서는 홈바 숨김
+        $('#st-home-btn').hide();
 
         const currentAction = replayData.actions[replayIndex];
         const actionText = typeof currentAction === 'string' ? currentAction : currentAction?.action || '';

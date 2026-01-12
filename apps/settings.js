@@ -222,6 +222,10 @@ Example: "A blurry photo of a cute stray cat {{char}} found"
 
 Keep it under 50 words. Just the description, nothing else.`,
 
+        // #FLING_START - 플링 스트리밍 앱 설정
+        flingStreamPrompt: '', // 빈 값이면 기본 프롬프트 사용
+        // #FLING_END
+
         // #IG_START - 인스타그램 설정
         // [인스타그램 포스팅 프롬프트 - 채팅 주입용]
         instagramPrompt: `### 📸 Instagram Posting
@@ -1066,6 +1070,23 @@ function saveToStorage() {
                             </div>
                         </div>
                         <!-- #IG_END -->
+
+                        <!-- #FLING_START - 플링 스트리밍 앱 설정 (설치시에만 표시) -->
+                        <div class="st-section" id="st-fling-settings-section" style="display:none;">
+                            <div class="st-row-block">
+                                <span class="st-label" style="font-size: 16px; margin-bottom: 10px;"><i class="fa-solid fa-video" style="margin-right:8px; color: #9146ff;"></i>플링 스트리밍 앱 설정</span>
+                            </div>
+                            <div class="st-row-block">
+                                <span class="st-label"><i class="fa-solid fa-video" style="margin-right:6px; color: #9146ff;"></i>플링 시청자 반응 프롬프트</span>
+                                <span class="st-desc">라이브 스트리밍 시청자 채팅/후원 생성 프롬프트 (비워두면 기본 프롬프트 사용)</span>
+                                <span class="st-desc" style="color:#9146ff; font-size: 11px;">
+                                    변수: {{myName}}, {{followerCount}}, {{viewerCount}}, {{streamTitle}}, {{action}}, {{contactsInfo}}, {{chatHistory}}, {{userPersonality}}, {{userTags}}, {{currencySymbol}}, {{currencyCode}}, {{regularDonation}}, {{mediumDonation}}, {{bigDonation}}
+                                </span>
+                                <textarea class="st-textarea mono" id="st-prompt-fling-stream" rows="12" placeholder="비워두면 기본 프롬프트가 사용됩니다. 화폐 정보는 은행 앱 설정에 따라 자동 적용됩니다."></textarea>
+                                <button class="st-btn-small" id="st-reset-fling-prompt">비우기 (기본값 사용)</button>
+                            </div>
+                        </div>
+                        <!-- #FLING_END -->
                     </div>
             </div>
             <style>
@@ -1345,6 +1366,16 @@ $('#st-set-sms-persona').val(currentSettings.smsPersona);
         $('#st-prompt-insta-allinone-tab').val(currentSettings.instaAllInOnePrompt || defaultSettings.instaAllInOnePrompt);
         $('#st-prompt-insta-comment-tab').val(currentSettings.instaCommentPrompt || defaultSettings.instaCommentPrompt);
         // #IG_END
+
+        // #FLING_START - 플링 스트리밍 앱 설정 로드
+        const flingInstalled = window.STPhone?.Apps?.Store?.isInstalled?.('streaming');
+        if (flingInstalled) {
+            $('#st-fling-settings-section').show();
+            $('#st-prompt-fling-stream').val(currentSettings.flingStreamPrompt || '');
+        } else {
+            $('#st-fling-settings-section').hide();
+        }
+        // #FLING_END
 
         $('#st-set-translate').prop('checked', currentSettings.translateEnabled);
         $('#st-set-translate-mode').val(currentSettings.translateDisplayMode || 'both');
@@ -1708,6 +1739,21 @@ $('#st-set-sms-persona').on('input', function() { currentSettings.smsPersona = $
         });
 // #IG_END
 
+// #FLING_START - 플링 스트리밍 앱 이벤트 핸들러
+        $('#st-prompt-fling-stream').on('input', function() {
+            currentSettings.flingStreamPrompt = $(this).val();
+            saveToStorage();
+        });
+        $('#st-reset-fling-prompt').on('click', () => {
+            if(confirm('플링 프롬프트를 비우고 기본값을 사용하시겠습니까?')) {
+                currentSettings.flingStreamPrompt = '';
+                $('#st-prompt-fling-stream').val('');
+                saveToStorage();
+                toastr.success('플링 프롬프트가 기본값으로 설정됩니다.');
+            }
+        });
+// #FLING_END
+
 // 번역 설정 이벤트
         $('#st-set-translate').on('change', function() {
             currentSettings.translateEnabled = $(this).is(':checked');
@@ -1872,8 +1918,11 @@ $('#st-reset-user-translate-prompt').on('click', () => {
             // #IG_START
             instagramPrompt: currentSettings.instagramPrompt,
             instaAllInOnePrompt: currentSettings.instaAllInOnePrompt,
-            instaCommentPrompt: currentSettings.instaCommentPrompt
+            instaCommentPrompt: currentSettings.instaCommentPrompt,
             // #IG_END
+            // #FLING_START
+            flingStreamPrompt: currentSettings.flingStreamPrompt
+            // #FLING_END
         };
 
         // JSON 파일로 변환
@@ -1988,6 +2037,14 @@ $('#st-reset-user-translate-prompt').on('click', () => {
                     importedCount++;
                 }
                 // #IG_END
+
+                // #FLING_START
+                if (imported.flingStreamPrompt !== undefined) {
+                    currentSettings.flingStreamPrompt = imported.flingStreamPrompt;
+                    $('#st-prompt-fling-stream').val(imported.flingStreamPrompt);
+                    importedCount++;
+                }
+                // #FLING_END
 
                 // 저장
                 saveToStorage();

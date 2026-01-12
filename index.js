@@ -52,6 +52,7 @@ const EXTENSION_NAME = 'ST Phone System';
             await loadModule('apps/store-apps/theme.js');
             await loadModule('apps/store-apps/bank.js');
             await loadModule('apps/store-apps/streaming.js');
+            await loadModule('apps/store-apps/instagram.js');
 
 
 
