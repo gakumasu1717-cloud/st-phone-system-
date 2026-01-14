@@ -1515,6 +1515,13 @@ ${postingSection}
             // 통합 AI 호출 - shouldAttemptPost 전달하여 불필요한 포스팅 프롬프트 제거
             const result = await generateAllSocialActivity(charName, personality, shouldAttemptPost);
             
+            console.log('[Instagram] AI 결과:', {
+                shouldPost: result.newPost.shouldPost,
+                caption: result.newPost.caption?.substring(0, 30),
+                commentRepliesCount: result.commentReplies?.length || 0,
+                pendingCommentsCount: result.pendingComments?.length || 0
+            });
+            
             let activityCount = 0;
             
             // 1. 댓글/답글 처리 (포스팅과 별도로 항상 처리)
